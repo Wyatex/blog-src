@@ -366,16 +366,16 @@ codeblock:
     dark: prism-dark
   # Add copy button on codeblock
   copy_button:
-    enable: false
+    enable: true
     # Available values: default | flat | mac
-    style:
+    style: mac
 
 back2top:
   enable: true
   # Back to top in sidebar.
   sidebar: false
   # Scroll percent label in b2t button.
-  scrollpercent: false
+  scrollpercent: true
 
 # Reading progress bar
 reading_progress:
@@ -416,10 +416,10 @@ github_banner:
 # ---------------------------------------------------------------
 
 font:
-  enable: false
+  enable: true
 
   # Uri of fonts host, e.g. https://fonts.googleapis.com (Default).
-  host:
+  host: https://fonts.googleapis.com
 
   # Font options:
   # `external: true` will load this font family from `host` above.
@@ -429,30 +429,30 @@ font:
   # Global font settings used for all elements inside <body>.
   global:
     external: true
-    family: Lato
+    family: Source Sans Pro
     size:
 
   # Font settings for site title (.site-title).
   title:
     external: true
-    family:
+    family: ZCOOL QingKe HuangYou
     size:
 
   # Font settings for headlines (<h1> to <h6>).
   headings:
     external: true
-    family:
+    family: Noto Sans Simplified Chinese
     size:
 
   # Font settings for posts (.post-body).
   posts:
     external: true
-    family:
+    family: Noto Sans Simplified Chinese
 
   # Font settings for <code> and code blocks.
   codes:
     external: true
-    family:
+    family: JetBrains Mono
 
 # ---------------------------------------------------------------
 # SEO Settings
