@@ -114,8 +114,8 @@ export const tsup: Options = {
 
 - index.ts
 - test.ts
-  - test1
-    - test1.ts
+- test1
+  - test1.ts
 
 然后tsup的入口配置成`entry: ['src/**/*.ts',]`，这样打包会递归打包，打包出来的目录也会和src的目录结构一样，如果想要通过`import xxx from 'npmpkg/test1'`，这样配置文件可能就需要变成这样:
 ```json package.json
