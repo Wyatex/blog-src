@@ -19,7 +19,7 @@ categories: Flutter
 安装flutter的话可以使用snap，不过使用snap国内速度可能非常慢，需要魔法，下面推荐两个个人觉得好用的魔法（非广告）：
 ```
 akkcloud点com  这个需要付费，节点多而且稳定
-tls点com  这个不需要付费，需要签到领流量，开始送2g，也够安装所有的环境了
+tly点com  这个不需要付费，需要签到领流量，开始送2g，也够安装所有的环境了
 ```
 
 ubuntu配置好系统代理后：
@@ -56,10 +56,10 @@ sudo vim /etc/hosts
 > 如果不打算使用安卓机进行调试，也可以不选择AS，但是下面我会用安卓和linux桌面应用进行解说。
 
 # 创建项目
-先在as安装flutter插件、重启、创建flutter项目。
+先在as安装flutter插件、重启、创建flutter项目，选中android、linux。
 
 # linux
-如果你的项目目录下没有linux文件夹，那么在项目目录执行：`flutter create --platforms=linux .`，这时候as就能选择linux运行了。我在ubuntu桌面应用上能够直接运行，应该不需要安装一些额外的编译工具，使用系统自带的编译工具就能直接构建运行。
+如果创建时没选择linux，可以在项目目录执行：`flutter create --platforms=linux .`，这时候as就能选择linux运行了。如果是下的22.04.1_desktop系统镜像而且安装时选全部安装那么系统已经自带了编译所需的编译环境了。
 
 # 配置安卓打包
 修改项目下的android/build.gradle
