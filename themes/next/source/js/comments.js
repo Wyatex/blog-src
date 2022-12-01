@@ -23,10 +23,11 @@ if (CONFIG.comments.storage) {
 }
 
 document.addEventListener("visibilitychange", () => {
-  console.log()
   if (document.visibilityState === 'hidden') {
     const title = document.title
-    document.title = '∑(っ°Д°;)っ '
+    setTimeout(()=>{
+      document.title = '∑(っ°Д°;)っ '
+    }, 100)
     setTimeout(()=>{
       document.title = '还会回来的对吧！'
     }, 500)

@@ -160,15 +160,14 @@ const KPIComponent = defineAsyncComponent({
 
 现在我们可以将其与异步组件结合使用，以便仅在收到来自服务器的成功响应时加载组件。在这里，我们获取数据，然后在 `fetch` 函数成功返回时导入组件：
 
-```html template
 
+```js 
+<template>
     <div>
         <component :is="KPIComponent" :data="data"></component> 
     </div>
-
-```
-
-```js script
+</template>
+<script>
 import {
     defineComponent,
     ref,
@@ -209,6 +208,7 @@ export default defineComponent({
                 }
             }
         )
+</script>
 ```
 
 为了处理每个组件的此过程，我们创建了一个称为 `WidgetLoader` 的高阶组件，您可以在仓库中看到该组件。
@@ -238,16 +238,13 @@ export default defineComponent({
 
 使用户感觉更流畅的一种快速方法是在小部件上设置一个大致对应于渲染组件的纵横比，这样用户就不会看到那么大的布局偏移。我们可以为此传递一个 prop 来解释不同的组件，并回退到默认值。
 
-```html WidgetLoader.vue template
-<div class="widget" :style="{ 'aspect-ratio': loading ? aspectRatio : '' }" >
-
-    <component :is="AsyncComponent" :data="data" />
-
-</div> 
-
-```
-
-```js WidgetLoader.vue script
+```js WidgetLoader.vue
+<template>
+    <div class="widget" :style="{ 'aspect-ratio': loading ? aspectRatio : '' }" >
+        <component :is="AsyncComponent" :data="data" />
+    </div> 
+<template>
+<script>
 import {
     defineComponent,
     ref,
@@ -294,6 +291,7 @@ export default defineComponent({
                         };
                     },
             }); 
+</script>
 ```
 
 # 中止 API 请求
@@ -328,3 +326,208 @@ onBeforeUnmount(() => controller.abort());
 ```
 
 如果在请求完成之前运行项目并导航到另一个页面，则应在控制台中看到错误，指出请求已中止。
+
+# 使用 stale-while-revalidate 保持新鲜度
+*Stale While Revalidate，说实话不知道怎么翻译了。。。*
+
+到目前为止，我们在优化应用程序方面做得很好。但是，当用户跳转到第二个路由，然后返回到前一个路由时，所有组件都会重新挂载并返回到其加载状态，我们必须重新等待请求响应。
+
+`stale-while-revalidate`是一种 HTTP 缓存失效策略，其中浏览器确定是提供来自缓存的响应（如果该内容仍然是最新的），还是“重新验证”并在响应过时时从网络提供。
+
+除了将缓存控制标头应用于我们的 HTTP 响应（超出了本文的范围，但请阅读[Web.dev 本文](https://web.dev/stale-while-revalidate/)以获取更多详细信息），我们还可以使用SWRV库将类似的策略应用于我们的 Vue 组件状态。
+
+首先，我们必须从 SWRV 库中导入组合式API：
+
+```js
+import useSWRV from "swrv";
+```
+
+然后我们可以在我们的 `setup` 函数中使用它。我们将函数 `loadComponent` 重命名为 `fetchData`，因为它只处理数据获取。我们将不再在此函数中导入我们的组件，因为我们将单独处理。
+
+我们将它作为第二个参数传递给 `useSWRV` 函数调用。只有当我们需要一个自定义函数来获取数据时，我们才需要这样做（也许我们需要更新一些其他状态）。当我们使用 Abort Controller 时，我们将执行此操作;否则，可以省略第二个参数，SWRV 将使用Fetch API：
+
+```js setup函数
+const { url, importFunction } = props;
+
+const controller = new AbortController();
+
+const fetchData = () => {
+  return fetch(url, { signal: controller.signal })
+    .then((response) => response.json())
+    .then((response) => (data.value = response))
+    .catch((e) => (error.value = e));
+};
+
+const { data, isValidating, error } = useSWRV(url, fetchData);
+```
+
+然后，我们将从异步组件定义中删除 `loadingComponent` 和 `errorComponent`，因为我们将使用 SWRV 来处理错误和加载状态。
+
+```js setup函数
+const AsyncComponent = defineAsyncComponent({
+  loader: importFunction,
+  delay: 200,
+  timeout: 5000,
+});
+```
+
+这意味着我们需要在模板中使用Loader和Error组件，并根据状态显示和隐藏它们。返回的isValidating告诉我们是否有请求或重新验证发生。
+
+```js
+<template>
+  <div>
+    <Loader v-if="isValidating && !data"></Loader>
+    <Error v-else-if="error" :errorMessage="error.message"></Error>
+    <component :is="AsyncComponent" :data="data" v-else></component>
+  </div>
+</template>
+
+<script>
+import {
+  defineComponent,
+  defineAsyncComponent,
+} from "vue";
+import useSWRV from "swrv";
+
+export default defineComponent({
+  components: {
+    Error,
+    Loader,
+  },
+
+  props: {
+    url: String,
+    importFunction: Function,
+  },
+
+  setup(props) {
+    const { url, importFunction } = props;
+
+    const controller = new AbortController();
+
+    const fetchData = () => {
+      return fetch(url, { signal: controller.signal })
+        .then((response) => response.json())
+        .then((response) => (data.value = response))
+        .catch((e) => (error.value = e));
+    };
+
+    const { data, isValidating, error } = useSWRV(url, fetchData);
+
+    const AsyncComponent = defineAsyncComponent({
+      loader: importFunction,
+      delay: 200,
+      timeout: 5000,
+    });
+
+    onBeforeUnmount(() => controller.abort());
+
+    return {
+      AsyncComponent,
+      isValidating,
+      data,
+      error,
+    };
+  },
+});
+</script>
+```
+
+我们可以将其重构为自己的组合式代码，使我们的代码更干净，使我们能够在任何地方使用它。
+
+```js composables/lazyFetch.js
+import { onBeforeUnmount } from "vue";
+import useSWRV from "swrv";
+
+export function useLazyFetch(url) {
+  const controller = new AbortController();
+
+  const fetchData = () => {
+    return fetch(url, { signal: controller.signal })
+      .then((response) => response.json())
+      .then((response) => (data.value = response))
+      .catch((e) => (error.value = e));
+  };
+
+  const { data, isValidating, error } = useSWRV(url, fetchData);
+
+  onBeforeUnmount(() => controller.abort());
+
+  return {
+    isValidating,
+    data,
+    error,
+  };
+}
+```
+
+```js WidgetLoader.vue
+import { defineComponent, defineAsyncComponent, computed } from "vue";
+import Loader from "./Loader";
+import Error from "./Error";
+import { useLazyFetch } from "../composables/lazyFetch";
+
+export default defineComponent({
+  components: {
+    Error,
+    Loader,
+  },
+
+  props: {
+    aspectRatio: {
+      type: String,
+      default: "5 / 3",
+    },
+    url: String,
+    importFunction: Function,
+  },
+
+  setup(props) {
+    const { aspectRatio, url, importFunction } = props;
+    const { data, isValidating, error } = useLazyFetch(url);
+
+    const AsyncComponent = defineAsyncComponent({
+      loader: importFunction,
+      delay: 200,
+      timeout: 5000,
+    });
+
+    return {
+      aspectRatio,
+      AsyncComponent,
+      isValidating,
+      data,
+      error,
+    };
+  },
+});
+```
+
+# 更新指示器
+如果我们可以在请求重新验证时向用户显示指示器，以便他们知道应用程序正在查询新数据，这可能会很有用。在示例中，我在组件的一角添加了一个小的加载指示器，仅当已经有数据但组件正在检查更新时，才会显示该指示器。我还在组件上添加了一个简单的淡入过渡（使用 Vue 内置的 `Transition` 组件），因此在渲染组件时不会有如此突然的跳跃。
+
+```js
+<template>
+  <div
+    class="widget"
+    :style="{ 'aspect-ratio': isValidating && !data ? aspectRatio : '' }"
+  >
+    <Loader v-if="isValidating && !data"></Loader>
+    <Error v-else-if="error" :errorMessage="error.message"></Error>
+    <Transition>
+        <component :is="AsyncComponent" :data="data" v-else></component>
+    </Transition>
+
+    <!--Indicator if data is updating-->
+    <Loader
+      v-if="isValidating && data"
+      text=""
+    ></Loader>
+  </div>
+</template>
+```
+
+# 结论
+在构建我们的 Web 应用程序时优先考虑性能可以改善用户体验，并有助于确保尽可能多的人可以使用它们。我们已经在 Ada Mode 中成功使用了上述技术来加快我们的应用程序。我希望本文提供了一些关于如何使您的应用程序尽可能高效的指示 - 无论您选择全部还是部分实现它们。
+
+SPA 可以做的很好，但它们也可能是性能瓶颈。所以，让我们尝试更好地编写SPA应用吧。
