@@ -1,11 +1,11 @@
 ---
 title: flutter快速入门笔记（1）
 date: 2022-11-04 14:58:06
+categories: Flutter
 tags:
-  - flutter
+  - Flutter
   - 前端
-categories: flutter
-copyright: true
+  - 笔记
 ---
 
 本系列不包含 Dart 语法笔记，以掌握 Dart 语法为前提记录。
