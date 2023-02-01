@@ -19,25 +19,25 @@ categories: Rust
 
 如果你的系统已经安装了Chocolatey 或者 Scoop,可以使用他们安装Rustup，我就为了方便就用系统自带的Winget来安装了：
 
-```sh
+```
 winget install rustup
 ```
 
 然后安装工具链的话，如果你的电脑有msvc，就下使用msvc的工具链：
 
-```sh
+```
 rustup toolchain install stable-x86_64-pc-windows-msvc
 ```
 
 如果你的电脑没有msvc，推荐使用mingw，更加小巧而且安装方便：
 
-```sh
+```
 rustup toolchain install stable-x86_64-pc-windows-gnu
 ```
 
 工具链也可以安装多个，可以用下面的方法切换：
 
-```sh
+```
 # 切到mingw
 rustup default stable-x86_64-pc-windows-gnu
 # 切到msvc
@@ -64,7 +64,7 @@ rustup default stable-x86_64-pc-windows-msvc
 
 创建完成后项目有一个main.rs：
 
-```rs
+```rust
 fn main() {
     println!("Hello, world!");
 }
@@ -82,7 +82,7 @@ fn main() {
 
 首先看看上面提到的代码：
 
-```rs
+```rust
 fn main() {
     println!("Hello 🌍!");
 }
@@ -96,7 +96,7 @@ fn main() {
 
 ### 简单示例
 
-```rs
+```rust
 fn main() {              // 程序入口
     let mut x: i32 = 6;  // 可变变量绑定
     print!("{x}");       // 使用宏打印，类似printf
@@ -193,7 +193,7 @@ Rust的很多语法对您来说都是熟悉的C或c++语法：
 
 数组分配和访问:
 
-```rs
+```rust
 fn main() {
     let mut a: [i8; 10] = [42; 10];
     a[5] = 0;
@@ -203,7 +203,7 @@ fn main() {
 
 元组分配和访问:
 
-```rs
+```rust
 fn main() {
     let t: (i8, bool) = (7, true);
     println!("1st index: {}", t.0);
@@ -215,7 +215,7 @@ fn main() {
 
 类似C++，Rust这样引用：
 
-```rs
+```rust
 fn main() {
     let mut x: i32 = 10;
     let ref_x: &mut i32 = &mut x;
@@ -233,7 +233,7 @@ fn main() {
 
 Rust将静态禁止悬空引用
 
-```rs
+```rust
 fn main() {
     let ref_x: &i32;
     {
@@ -252,7 +252,7 @@ fn main() {
 
 切片为您提供了一个更大集合的视图
 
-```rs
+```rust
 fn main() {
     let a: [i32; 6] = [10, 20, 30, 40, 50, 60];
     println!("a: {a:?}");
@@ -269,7 +269,7 @@ fn main() {
 
 现在我们可以这样理解Rust中的两种字符串类型:
 
-```rs
+```rust
 fn main() {
     let s1: &str = "Hello";
     println!("s1: {s1}");
@@ -290,7 +290,7 @@ Rust 术语：
 
 Rust版的著名的[FizzBuzz](https://en.wikipedia.org/wiki/Fizz_buzz)面试问题：
 
-```rs
+```rust
 fn main() {
     fizzbuzz_to(20);   // 在下面定义，不需要在前面声明
 }
@@ -322,7 +322,7 @@ fn fizzbuzz_to(n: u32) {  // `-> ()` 通常省略
 
 Rust有方法，它们只是与特定类型相关联的函数。方法的第一个参数是与其关联的类型的实例：
 
-```rs
+```rust
 struct Rectangle {
     width: u32,
     height: u32,
@@ -359,7 +359,7 @@ Rust不支持重载:
 
 然而，函数参数可以是通用的：
 
-```rs
+```rust
 fn pick_one<T>(a: T, b: T) -> T {
     if std::process::id() % 2 == 0 { a } else { b }
 }
@@ -381,7 +381,7 @@ fn main() {
 
 Rust不会自动进行类型之间的隐式转换(与c++不同)。你可以在这样的程序中看到这一点：
 
-```rs
+```rust
 fn multiply(x: i16, y: i16) -> i16 {
     x * y
 }
@@ -407,13 +407,13 @@ Rust整数类型都实现了`From<T>`和`Into<T>`traits(翻译：特性)，以�
 
 我们看到数组可以这样声明:
 
-```rs
+```rust
 let array = [10, 20, 30];
 ```
 
 你可以通过 `{:?}` 来打印数组:
 
-```rs
+```rust
 fn main() {
     let array = [10, 20, 30];
     println!("array: {array:?}");
@@ -422,7 +422,7 @@ fn main() {
 
 Rust允许您使用`for`关键字迭代数组和范围等内容：
 
-```rs
+```rust
 fn main() {
     let array = [10, 20, 30];
     print!("Iterating over array:");
@@ -451,7 +451,7 @@ fn main() {
 
 复制下面的代码到 [https://play.rust-lang.org/](https://play.rust-lang.org/) 并且实现功能
 
-```rs
+```rust
 // TODO: 在完成实现后删除它。
 #![allow(unused_variables, dead_code)]
 
@@ -481,7 +481,7 @@ fn main() {
 
 这是我的作业答案，聪明的小伙伴可以看看有没有值得改进的地方：
 
-```rs
+```rust
 fn transpose(matrix: [[i32; 3]; 3]) -> [[i32; 3]; 3] {
     let mut new_matrix: [[i32; 3]; 3] = [[0; 3]; 3];
     for i in 0..3 {

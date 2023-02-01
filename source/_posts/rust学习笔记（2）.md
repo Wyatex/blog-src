@@ -15,7 +15,7 @@ categories: Rust
 
 Rust通过静态类型提供类型安全性。默认情况下变量绑定是不可变的：
 
-```rs
+```rust
 fn main() {
     let x: i32 = 10;
     println!("x: {x}");
@@ -28,7 +28,7 @@ fn main() {
 
 Rust将根据如何使用变量来确定类型：
 
-```rs
+```rust
 fn takes_u32(x: u32) {
     println!("u32: {x}");
 }
@@ -55,7 +55,7 @@ fn main() {
 
 您可以声明编译时常量：
 
-```rs
+```rust
 const DIGEST_SIZE: usize = 3;
 const ZERO: Option<u8> = Some(42);
 
@@ -77,7 +77,7 @@ fn main() {
 
 您还可以声明静态变量:
 
-```rs
+```rust
 static BANNER: &str = "Welcome to RustOS 3.14";
 
 fn main() {
@@ -137,7 +137,7 @@ Rust 提供了一个新的组合：
 
 创建Strings时将固定大小的数据放在堆栈上，并将动态大小的数据放在堆上：
 
-```rs
+```rust
 fn main() {
     let s1 = String::from("Hello");
 }
@@ -258,7 +258,7 @@ Rust中的内存管理是一种混合模式:
 
 所有变量绑定都有一个有效的作用域，使用超出其作用域的变量是错误的
 
-```rs
+```rust
 struct Point(i32, i32);
 
 fn main() {
@@ -278,7 +278,7 @@ fn main() {
 
 赋值操作将在变量之间转移所有权
 
-```rs
+```rust
 fn main() {
     let s1: String = String::from("Hello!");
     let s2: String = s1;
@@ -295,7 +295,7 @@ fn main() {
 
 ### 在 Rust 中移动的字符串
 
-```rs
+```rust
 fn main() {
     let s1: String = String::from("Rust");
     let s2: String = s1;
@@ -325,7 +325,7 @@ std::string s2 = s1;  // Duplicate the data in s1.
 
 将值传递给函数时，值被赋给函数形参。这就转移了所有权:
 
-```rs
+```rust
 fn say_hello(name: String) {
     println!("Hello {name}")
 }
@@ -341,7 +341,7 @@ fn main() {
 
 虽然move语义是默认的，但默认情况下会复制某些类型
 
-```rs
+```rust
 fn main() {
     let x = 42;
     let y = x;
@@ -354,7 +354,7 @@ fn main() {
 
 您可以选择自己的类型来使用复制语义：
 
-```rs
+```rust
 #[derive(Copy, Clone, Debug)]
 struct Point(i32, i32);
 
@@ -373,7 +373,7 @@ fn main() {
 
 在调用函数时，可以让函数借用值，而不是转移所有权：
 
-```rs
+```rust
 #[derive(Debug)]
 struct Point(i32, i32);
 
@@ -399,7 +399,7 @@ Rust限制了借用值的方式：
 * 在任何给定时间都可以有一个或多个&T值，或者
 * 你只能有一个`&mut`值。
 
-```rs
+```rust
 fn main() {
     let mut a: i32 = 10;
     let b: &i32 = &a;
@@ -428,7 +428,7 @@ fn main() {
 
 除了借用实参外，函数还可以返回一个借来的值:
 
-```rs
+```rust
 #[derive(Debug)]
 struct Point(i32, i32);
 
@@ -453,7 +453,7 @@ fn main() {
 
 如果数据类型存储借来的数据，则必须使用生命期对其进行注释
 
-```rs
+```rust
 #[derive(Debug)]
 struct Highlight<'doc>(&'doc str);
 
@@ -477,7 +477,7 @@ fn main() {
 
 明天我们将学习更多关于结构体和`Vec<T>`类型的知识。现在，您只需要知道它的API的一部分:
 
-```rs
+```rust
 fn main() {
     let mut vec = vec![10, 20];
     vec.push(30);
@@ -490,7 +490,7 @@ fn main() {
 
 使用它来创建库应用程序。复制下面代码并完善它：
 
-```rs
+```rust
 // TODO: remove this when you're done with your implementation.
 #![allow(unused_variables, dead_code)]
 
@@ -568,6 +568,87 @@ fn main() {
 }
 ```
 
+我的答案:
+```rust
+struct Library {
+    books: Vec<Book>,
+}
+
+struct Book {
+    title: String,
+    year: u16,
+}
+
+impl Book {
+    // This is a constructor, used below.
+    fn new(title: &str, year: u16) -> Book {
+        Book {
+            title: String::from(title),
+            year,
+        }
+    }
+}
+
+// This makes it possible to print Book values with {}.
+impl std::fmt::Display for Book {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} ({})", self.title, self.year)
+    }
+}
+
+impl Library {
+    fn new() -> Library {
+        Library {
+            books: vec![]
+        }
+    }
+
+    fn is_empty(&self) -> bool {
+       self.books.is_empty()
+    }
+
+    fn add_book(&mut self, book: Book) {
+       self.books.push(book)
+    }
+
+    fn print_books(&self) {
+        for item in self.books.iter() {
+            println!("book: {item}")
+        }
+    }
+
+    fn len(&self) -> usize {
+        return self.books.len()
+    }
+
+    fn oldest_book(&self) -> Option<&Book> {
+        self.books.iter().min_by_key(|x| x.year)
+    }
+}
+
+// This shows the desired behavior. Uncomment the code below and
+// implement the missing methods. You will need to update the
+// method signatures, including the "self" parameter! You may
+// also need to update the variable bindings within main.
+fn main() {
+    let mut library = Library::new();
+
+    println!("Our library is empty: {}", library.is_empty());
+
+    library.add_book(Book::new("Lord of the Rings", 1954));
+    library.add_book(Book::new("Alice's Adventures in Wonderland", 1865));
+
+    library.print_books();
+
+    match library.oldest_book() {
+       Some(book) => println!("My oldest book is {book}"),
+       None => println!("My library is empty!"),
+    }
+
+    println!("Our library has {} books", library.len());
+}
+```
+
 ### 迭代器和所有权(难)
 
 Rust的所有权模型影响许多api。一个例子就是[`Iterator`](https://doc.rust-lang.org/std/iter/trait.Iterator.html)和[`IntoIterator`](https://doc.rust-lang.org/std/iter/trait.IntoIterator.html) traits。
@@ -576,7 +657,7 @@ Rust的所有权模型影响许多api。一个例子就是[`Iterator`](https://d
 
 Traits 类似于接口:它们描述类型的行为(方法)。`Iterator` trait只是说，您可以调用`next`，直到返回`None`为止:
 
-```rs
+```rust
 pub trait Iterator {
     type Item;
     fn next(&mut self) -> Option<Self::Item>;
@@ -585,7 +666,7 @@ pub trait Iterator {
 
 你可以这样使用这个trait:
 
-```rs
+```rust
 fn main() {
     let v: Vec<i8> = vec![10, 20, 30];
     let mut iter = v.iter();
@@ -599,7 +680,7 @@ fn main() {
 
 迭代器返回的类型是什么?在这里测试你的答案:
 
-```rs
+```rust
 fn main() {
     let v: Vec<i8> = vec![10, 20, 30];
     let mut iter = v.iter();
@@ -615,7 +696,7 @@ fn main() {
 
 `Iterator` traut告诉您在创建迭代器后如何进行*迭代*。相关的trait `IntoIterator`告诉你如何创建迭代器:
 
-```rs
+```rust
 pub trait IntoIterator {
     type Item;
     type IntoIter: Iterator<Item = Self::Item>;
@@ -633,7 +714,7 @@ pub trait IntoIterator {
 
 和前面一样，迭代器返回的类型是什么?
 
-```rs
+```rust
 fn main() {
     let v: Vec<String> = vec![String::from("foo"), String::from("bar")];
     let mut iter = v.into_iter();
@@ -647,7 +728,7 @@ fn main() {
 
 现在我们知道了`Iterator`和`IntoIterator`，我们可以构建`for`循环。它们在表达式上调用`into_iter()`并遍历得到的迭代器:
 
-```rs
+```rust
 fn main() {
     let v: Vec<String> = vec![String::from("foo"), String::from("bar")];
 
@@ -662,5 +743,7 @@ fn main() {
 ```
 
 每个循环中`word`的类型是什么?
+
+> 我的想法：如果是for in遍历变量的引用，那只是借用，而for in变量变量本身则会转移所有权，所有第一次循环的是&String类型，第二次是String类型。（复制到ide就能看到类型）
 
 尝试上面的代码，然后查阅文档中的[`impl IntoIterator for &Vec<T>`](https://doc.rust-lang.org/std/vec/struct.Vec.html#impl-IntoIterator-2)和[`impl IntoIterator for Vec<T>`](https://doc.rust-lang.org/std/vec/struct.Vec.html#impl-IntoIterator-1)来检查您的答案。
