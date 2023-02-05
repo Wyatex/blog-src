@@ -7,6 +7,8 @@ tags:
 categories: 前端
 ---
 
+文章来源：[Monorepos in JavaScript & TypeScript](https://www.robinwieruch.de/javascript-monorepos/)
+
 # 什么是 MONOREPO
 
 monorepo 是一个包含较小项目的项目 - 而每个项目可以是从单个应用程序到可重用包（例如函数，组件）的任何内容。合并项目的做法可以追溯到 2000 年初，当时它被称为共享代码库。
