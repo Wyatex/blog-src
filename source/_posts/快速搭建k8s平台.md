@@ -210,7 +210,7 @@ systemctl restart kubelet
 host_name=$(hostname)
 
 echo
-echo "\033[34m检查状态\033[0m 待 kuboard-v3-${host_name} 的容器组变为 Running 状态后，则安装成功，可以通过 http://${ipaddr}:32001 访问 kuboard 界面"
+echo "kubectl get pods -A 检查状态待 kuboard-v3-${host_name} 的容器组变为 Running 状态后，则安装成功，可以通过 http://${ipaddr}:32001 访问 kuboard 界面"
 ```
 
 查看 pods 状态
