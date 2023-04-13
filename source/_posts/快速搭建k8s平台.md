@@ -247,3 +247,70 @@ kubectl delete -f /root/kuboard-sa.yaml
 ```
 kubectl taint nodes --all node-role.kubernetes.io/control-plane-
 ```
+
+# 多节点安装
+
+既然是多节点，那最少需要两台机器，在安装之前，需要保证每个服务器名是不重复的，比如一台服务器叫 master01，一台叫 node01，改名指令如下：
+
+```
+hostnamectl set-hostname master01
+reboot
+```
+
+需要重启才能生效
+
+然后是部署配置文件
+
+```sh Clusterfile
+apiVersion: apps.sealos.io/v1beta1
+kind: Cluster
+metadata:
+  creationTimestamp: null
+  name: default
+spec:
+  hosts:
+  - ips:
+    - 192.168.206.100:22
+    roles:
+    - master
+    - amd64
+  - ips:
+    - 192.168.206.102:22
+    roles:
+    - node
+    - amd64
+  image:
+  - labring/kubernetes:v1.25.0
+  - labring/helm:v3.8.2
+  - labring/calico:v3.24.1
+  ssh:
+    passwd: "123"
+    pk: /root/.ssh/id_rsa
+    port: 22
+status: {}
+---
+apiVersion: kubeadm.k8s.io/v1beta2
+kind: ClusterConfiguration
+networking:
+  podSubnet: 10.160.0.0/12
+```
+
+新建文件 Clusterfile 放在当前目录，执行下面命令开始安装
+
+```
+sealos apply -f Clusterfile
+```
+
+不出意外的话，过一会就能装好了。
+
+# 添加删除节点
+添加删除node节点
+```
+sealos add --nodes xxx.xxx.xxx.xxx
+sealos delete --nodes xxx.xxx.xxx.xxx
+```
+如果是master节点，上面的nodes换成masters。
+有s是因为可以同时删除多个节点，比如
+```
+sealos add --nodes xxx.xxx.xxx.xxx,yyy.yyy.yyy.yyy
+```
