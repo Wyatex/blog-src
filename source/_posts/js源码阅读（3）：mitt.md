@@ -214,7 +214,7 @@ export default function mitt<Events extends Record<EventType, unknown>>(
 ```ts
 type Events = {
   emitString: string
-  emitVoid: string
+  emitVoid: void
 }
 const emitter = mitt<Events>()
 emitter.on('emitVoid', ()=>{
