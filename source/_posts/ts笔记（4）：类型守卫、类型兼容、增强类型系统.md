@@ -150,6 +150,7 @@ const isDog = function (animal: Dog | Cat): animal is Dog {
 }
 const getName = (animal: Dog | Cat) => {
   if (isDog(animal)) {
+    // 这里结果是true, animal收缩成Dog类型
     return animal.wang
   }
 }
