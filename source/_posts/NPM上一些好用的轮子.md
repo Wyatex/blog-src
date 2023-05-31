@@ -1,5 +1,5 @@
 ---
-title: 一些好用的NPM小工具
+title: NPM上一些好用的轮子
 date: 2023-05-22 09:58:53
 tags:
 - JavaScript
@@ -9,11 +9,13 @@ categories: JavaScript
 
 一些工具类：
 
-- p-limit:  promise 并发限制
-- await-to-js: Async await包装器，便于错误处理
-- delay: 将setTimeout promise化
+- p-limit：promise 并发限制
+- await-to-js：Async await包装器，便于错误处理
+- delay：将setTimeout promise化
 - yocto-queue： 简单的队列数据结构，（入队出队时间O(1)）
-- mitt: 简单实用的事件总线工具
+- mitt：简单实用的事件总线工具
+- autofit.js：自适应屏幕大小
+- prompts：命令行提示工具，可以用来写cli
 
 一些cli工具：
 
