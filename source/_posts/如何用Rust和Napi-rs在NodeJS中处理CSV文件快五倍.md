@@ -149,7 +149,7 @@ NAPI代码被编译到Nodejs可以加载的动态库中。因此，您可以使�
 npm i -g @napi-rs/cli
 ```
 
-> @napi-rs/cliz用的是yarn，如果没装yarn记得把yarn也安装一下
+> @napi-rs/cli用的是yarn，如果没装yarn记得把yarn也安装一下
 
 然后，您可以使用以下命令创建一个新模块：
 
