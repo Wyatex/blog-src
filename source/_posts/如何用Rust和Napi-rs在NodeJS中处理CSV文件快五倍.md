@@ -64,7 +64,7 @@ lineReader
         }
     })
     .on("close", () => {
-        console.log(`总共${sum}sum`)
+        console.log(`总共${sum}行`)
         console.log(`用时${(Date.now() - start) / 1000}s`,)
     })
 ```
@@ -73,6 +73,7 @@ lineReader
 
 ```sh
 > node test1.js
+总共3345553228行
 用时 11.334s
 ```
 
