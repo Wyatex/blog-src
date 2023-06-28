@@ -507,6 +507,23 @@ getPointX({ x: 1, y: '2' }) // error
 
 这是 ts 中的另一个特性，叫做: **excess property check ，当传入的参数是一个对象字面量时，会进行额外属性检查**。
 
+## 全局模块 vs. 文件模块
+当我们没写import或者export的时候，ts会认为我们在写全局模块：
+```ts a.ts
+const foo = 1
+```
+
+```ts b.ts
+const bar = foo
+```
+
+要打破这种规则最简单就是加入import或者export
+
+```ts
+export const bar = foo // error
+```
+
 ---
 
 基本特性已经讲的差不多了，下一篇开始黑魔法的练习
+
