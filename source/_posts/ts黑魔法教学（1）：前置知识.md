@@ -288,7 +288,7 @@ _该 example 没有任何实际意义，仅仅展示一下递归的方式_
 
 ## 好用的小特性
 
-### name!
+### name
 
 如果你打算通过构造函数以外的其他方式去初始化类中的字段 (例如，也许外部库一定会帮你填充类的一部分)，则可以使用 确定赋值断言运算符 !，它只能被用在你确定安全的地方
 
@@ -507,8 +507,29 @@ getPointX({ x: 1, y: '2' }) // error
 
 这是 ts 中的另一个特性，叫做: **excess property check ，当传入的参数是一个对象字面量时，会进行额外属性检查**。
 
+## 判断never
+先来看一个反直觉的现象：
+```ts
+// 1.
+type JudgeNever = never extends never ? true : false; // true
+
+// 2.
+type TryIsNever<T extends any> = T extends never ? true : false;
+type testTryIsNever = TryIsNever<never> // never
+
+// 3.
+type IsNever<T extends any> = [T] extends [never] ? true : false;
+type testIsNever = IsNever<never>  // true
+```
+
+never是一个特殊的联合类型（它本身是一个底部类型），它没有任何一个成员，而根据Distributive Conditional Types，联合类型作为泛型传入后，会分开计算，因此当输入是never时，因为他一个成员都没有，自然也不需要计算了，直接返回never。而`[T]`是ts实现的一个特性，能够打破这种Distributive Conditional Types规则。 然后似乎范型默认是当联合类型处理条件语句？所以1和2的结构不同 如果不能理解咱就记住：`[T] extends [never]`只能这么判断类型是否是never
+
+# 别的一些知识点
+
 ## 全局模块 vs. 文件模块
+
 当我们没写import或者export的时候，ts会认为我们在写全局模块：
+
 ```ts a.ts
 const foo = 1
 ```
@@ -523,7 +544,33 @@ const bar = foo
 export const bar = foo // error
 ```
 
+## 字符串转数字
+
+使用场景：字符串的逐个解析有递归特性，我们可以转成字符串后做一些这方面的处理，处理完后还需要转回去
+
+```ts
+type ToNumber<T> = T extends `${infer N extends number}`
+  ? N
+  : T
+```
+
+## 映射类型 key值的交集与并集
+
+```ts
+type foo = {
+  name: string;
+  age: string;
+}
+
+type coo = {
+  age: number;
+  sex: string
+}
+
+type TestUnion = keyof foo | keyof coo; // 'name' | 'age' | 'sex'
+type TestBoth = keyof (foo | coo);  // 'age'
+```
+
 ---
 
 基本特性已经讲的差不多了，下一篇开始黑魔法的练习
-

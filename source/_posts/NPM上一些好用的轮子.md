@@ -16,6 +16,8 @@ categories: JavaScript
 - mitt：简单实用的事件总线工具
 - autofit.js：自适应屏幕大小
 - prompts：命令行提示工具，可以用来写cli
+- class-transformer: 将object转成class
+- class-validator: 简化验证的库
 
 一些cli工具：
 
