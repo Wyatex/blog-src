@@ -1,11 +1,9 @@
-.highlight:hover .copy-btn, pre:hover .copy-btn {
+.highlight:hover .copy-btn, .code-container:hover .copy-btn {
   opacity: 1;
 }
 
-figure.highlight {
-  .table-container {
-    position: relative;
-  }
+.code-container {
+  position: relative;
 }
 
 .copy-btn {
@@ -41,17 +39,12 @@ figure.highlight {
 
 if (hexo-config('codeblock.copy_button.style') == 'mac') {
   figure.highlight {
-    border-radius: 16px;
+    border-radius: 5px;
+    box-shadow: 0 10px 30px 0 rgba(0, 0, 0, .4);
     padding-top: 30px;
-    box-shadow: 0 1px 2px -2px rgba(0, 0, 0, 0.08), 0 2px 4px 0 rgba(0, 0, 0, 0.06), 0 3px 8px 2px rgba(0, 0, 0, 0.04);
-    transition: box-shadow .3s cubic-bezier(0.4, 0, 0.2, 1);
 
     .table-container {
-      border-radius: 0 0 0 16px;
-    }
-
-    &:hover {
-      box-shadow: 0 3px 6px -2px rgba(0, 0, 0, 0.08), 0 5px 9px 0 rgba(0, 0, 0, 0.06), 0 9px 20px 8px rgba(0, 0, 0, 0.04);
+      border-radius: 0 0 5px 5px;
     }
 
     &::before {
