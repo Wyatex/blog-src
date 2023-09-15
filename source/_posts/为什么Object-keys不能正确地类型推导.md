@@ -9,6 +9,7 @@ categories: TypeScript
 
 原文：[Why doesn't TypeScript properly type Object.keys](https://alexharri.com/blog/typescript-structural-typing)
 
+<!-- more -->
 
 如果你写过一段时间的TypeScript，你可能会遇到这种情况
 

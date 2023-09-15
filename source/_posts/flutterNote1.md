@@ -132,7 +132,7 @@ Widget 的状态更新，主要由 3 个方法触发：
 
 ## 销毁
 
-组件被移除，或是页面销毁的时候，系统会调用 deactivate（相当于 vue 组件的 mounte 过程） 和 dispose（相当于 vue 组件的 destroy 过程） 这两个方法，来移除或销毁组件。
+组件被移除，或是页面销毁的时候，系统会调用 deactivate 和 dispose，来移除或销毁组件。相当于 vue 组件的 unmounte 过程，貌似vue组件卸载和销毁是一个周期内执行完，并提供beforeUnmount和unmounted钩子函数。
 
 ## 几种常见过程的生命周期过程
 
