@@ -8,7 +8,7 @@ tags:
   - 笔记
 ---
 
-本系列不包含 Dart 语法笔记，以掌握 Dart 语法为前提记录。
+本系列不包含 Dart 语法笔记，以掌握 Dart 语法为前提记录。不懂可以百度搜一下Dart快速入门教程，如果你本来就懂js，基本可以一两小时内掌握Dart的语法，比如看下[Flutter实战上的Dart简介](https://book.flutterchina.club/chapter1/dart.html)
 
 <!-- more -->
 
@@ -61,19 +61,19 @@ class MyApp extends StatelessWidget {
 }
 ```
 
-相当于 vue 的(当然 vue 中不存在可变或者不可变的组件，简答类比理解一下)
+相当于 vue 的这样的代码
 
 ```js MyApp.vue
 <template>
-    <MaterialThemeConfig>
-        <MyHomePage :title="Vue Demo Home Page" />
-    </MaterialThemeConfig>
+    <div>
+        <p>HelloWorld</p>
+    <div>
 </template>
 <script setup>
-import MaterialThemeConfig from './MaterialThemeConfig.vue' // 给子组件提供Provider，提供全局的MD样式
-import MyHomePage from './MyHomePage.vue'
 </script>
 ```
+
+vue3编译器会发现这个div和p是静态的，会编译成_hoisted_1、_hoisted_2 这样的对象，提升到render函数之外，组件实例化时只会构建一次，避免每次执行render都要重新构建。
 
 # StatefulWidget
 
@@ -210,4 +210,4 @@ class _MyHomePageState extends State<MyHomePage>  with WidgetsBindingObserver{
 }
 ```
 
-以上就是 flutter 的基本知识了，如果会 vue 的话入手 flutter 也是简简单单
+以上就是 flutter 的基本知识了，如果会 vue 的话入手 flutter 也是简简单单。如果点赞多就继续写一下布局、组件的快速入门教程XD
