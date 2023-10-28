@@ -14,6 +14,8 @@ categories: 前端
 
 官方入门原文：<https://qwik.builder.io/docs/getting-started/>
 
+<!-- more -->
+
 ## 前置条件
 
 要在本地开始使用Qwik，你需要以下内容：
@@ -72,7 +74,7 @@ export default component$(() => {
 
 3. 在浏览器打开<http://127.0.0.1:5173/sentence/>
 
-![image.png](https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/7c01f82424934489b948e245421a3987~tplv-k3u1fbpfcp-jj-mark:0:0:0:0:q75.image#?w=1042&h=566&s=24423&e=png&b=151934)
+{% asset_img p1.png %}
 
 > 你的sentence路由组件现在被一个默认的布局包裹住，有关什么是布局以及如何使用布局的更多详细信息，请参阅[布局](https://qwik.builder.io/docs/layout/)
 >
@@ -113,7 +115,7 @@ export default component$(() => {
 
 保存代码之后再去浏览器查看：<http://127.0.0.1:5173/sentence/>
 
-![image.png](https://p1-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/1811c13a5c9444f4804181ac64d8ea2c~tplv-k3u1fbpfcp-jj-mark:0:0:0:0:q75.image#?w=377&h=250&s=8086&e=png&b=151934)
+{% asset_img p2.png %}
 
 代码解析：
 
@@ -173,7 +175,7 @@ export default component$(() => {
 
 保存代码，页面多出两个按钮，随便点一个，再查看服务端有没有打印：
 
-![image.png](https://p6-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/19ededd4e8ab49c092d9a459a05567a7~tplv-k3u1fbpfcp-jj-mark:0:0:0:0:q75.image#?w=1078&h=529&s=58368&e=png&b=0f0f0f)
+{% asset_img p3.png %}
 
 代码解析：
 
@@ -319,7 +321,7 @@ export default component$(() => {
 });
 ```
 
-![image.png](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/65a3fb3c27584f88b2dee33eda38cf88~tplv-k3u1fbpfcp-jj-mark:0:0:0:0:q75.image#?w=1089&h=824&s=120099&e=png&b=1d1d1d)
+{% asset_img p4.png %}
 
 注意：
 
@@ -403,6 +405,6 @@ export default component$(() => {
 
 效果：
 
-![image.png](https://p1-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/edb8f925dd7645f2942838db49a669eb~tplv-k3u1fbpfcp-jj-mark:0:0:0:0:q75.image#?w=810&h=437&s=21250&e=png&b=151934)
+{% asset_img p5.png %}
 
 > 上面就是Qwik官方文档的入门教程，有兴趣赶紧去试试吧

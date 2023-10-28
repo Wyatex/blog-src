@@ -1,7 +1,6 @@
 ---
 title: 面向Vue开发者的Flutter教程（1）
 date: 2023-10-28 23:35:18
-tags:
 categories: Flutter
 tags:
   - Flutter
@@ -17,6 +16,8 @@ tags:
 
 当然如果是客户端开发的掘友也可以选择自己熟悉的客户端，比如安卓、iOS甚至是Windows、Linux、Mac OS客户端来运行，这些都是支持的，而且不涉及和系统之间的调用的话，所有方式的开发都是能保持一致的，这就是Flutter这个大前端框架的强大能力哦！
 
+<!-- more -->
+
 ## 从官方Demo跑起来吧
 
 从这里开始就默认大家已经搭建好开发环境，也就是安装好Android Studio（加上Flutter插件）、Flutter工具链。
@@ -25,15 +26,15 @@ tags:
 
 New Flutter Project => 选择Flutter => 选择Flutter安装目录 => 修改项目名称、调整项目目录 => Create!
 
-![image.png](https://p6-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/682d7e48ce204e2a97f6cd1d21bf7a03~tplv-k3u1fbpfcp-jj-mark:0:0:0:0:q75.image#?w=800&h=650&s=45191&e=png&b=3c3f41)
+{% asset_img p1.png %}
 
-![image.png](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/ff053d2a123b4c6bb177f0af920e38bc~tplv-k3u1fbpfcp-jj-mark:0:0:0:0:q75.image#?w=800&h=618&s=48245&e=png&b=3e4143)
+{% asset_img p2.png %}
 
 Nice！创建一个Flutter项目就这么简单，接下来就是，Flutter，启动！
 
-![image.png](https://p6-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/6637e3abf8754dc68aacaa649242f655~tplv-k3u1fbpfcp-jj-mark:0:0:0:0:q75.image#?w=1396&h=994&s=231390&e=png&b=2a2c2f)
+{% asset_img p3.png %}
 
-![image.png](https://p1-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/b7d119a9cfd6463a98b3a65068524492~tplv-k3u1fbpfcp-jj-mark:0:0:0:0:q75.image#?w=1920&h=1031&s=346310&e=png&b=2a2c2f)
+{% asset_img p4.png %}
 
 不出意外的话，咱们的Flutter项目就跑起来辣！是不是很简单捏。
 
