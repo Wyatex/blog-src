@@ -67,10 +67,6 @@ hexo.extend.filter.register('after_generate', () => {
     hexo.route.remove('js/third-party/chat/tidio.js');
   }
 
-  if (!theme.gitter.enable) {
-    hexo.route.remove('js/third-party/chat/gitter.js');
-  }
-
   // Comments
   if (!theme.changyan.enable || !theme.changyan.appid || !theme.changyan.appkey) {
     hexo.route.remove('js/third-party/comments/changyan.js');
@@ -137,6 +133,10 @@ hexo.extend.filter.register('after_generate', () => {
     hexo.route.remove('js/third-party/tags/pdf.js');
   }
 
+  if (!theme.wavedrom.enable) {
+    hexo.route.remove('js/third-party/tags/wavedrom.js');
+  }
+
   // Others
   if (!theme.fancybox) {
     hexo.route.remove('js/third-party/fancybox.js');
@@ -148,9 +148,5 @@ hexo.extend.filter.register('after_generate', () => {
 
   if (!theme.quicklink.enable) {
     hexo.route.remove('js/third-party/quicklink.js');
-  }
-
-  if (!theme.rating.enable) {
-    hexo.route.remove('js/third-party/rating.js');
   }
 });

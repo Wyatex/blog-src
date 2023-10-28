@@ -13,7 +13,7 @@ timezone: ''
 
 # URL
 ## Set your site url here. For example, if you use GitHub Page, set url as 'https://username.github.io/project'
-url: 'https://wyatex.work/'
+url: 'https://wyatex.online/'
 # url: 'https://wyatex.web.cloudendpoint.cn/'
 root: /
 permalink: ':category/:title/'

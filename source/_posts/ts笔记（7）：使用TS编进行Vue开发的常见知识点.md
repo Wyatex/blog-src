@@ -1,6 +1,7 @@
 ---
 title: ts笔记（7）：使用TS编进行Vue开发的常见知识点
 date: 2022-07-26 19:37:40
+updated: 2023-07-25 08:59:59
 tags:
   - TypeScript
   - 前端
@@ -60,7 +61,9 @@ const double = computed<number>(() => {
 });
 ```
 
-# 给 props 和 emits 页指定类型
+# setup 编译宏
+
+## defineProps
 
 同样看到`src/components/HelloWorld.vue`的第 4 行，`defineProps<{ msg: string }>()`，在 setup 语法糖中，使用一个 defineProps 宏函数定义组件的类型，相当于 vue2 中的：
 
@@ -85,9 +88,175 @@ withDefaults(defineProps<{ msg?: string }>(), {
 });
 ```
 
-如果你需要在setup中拿到props的值可以这样：
+如果你需要在 setup 中拿到 props 的值可以这样：
+
 ```ts
-const props = defineProps<{ age: string }>() // withDefaults也是一样
-const myComputed = computed(()=>props.age*2)
+const props = defineProps<{ age: string }>(); // withDefaults也是一样
+const myComputed = computed(() => props.age * 2);
 // 这样myComputed可以响应式的根据传入的props进行计算
 ```
+
+vue3.3 版本之后，defineProps 可以接受泛型：
+
+```
+ //-------------父组件-----------------
+ <Child :name="['xiaoman']"></Child>
+
+ //-------------子组件-----------------
+ <template>
+ <div>
+     {{ name }}
+ </div>
+</template>
+ <script generic="T"  lang='ts' setup>
+ defineProps<{
+    name:T[]
+ }>()
+</script>
+```
+
+这样，这里的 T 就是 `string[]` 类型了
+
+## defineEmits
+
+子组件定义 emit 类型：
+
+```ts
+const emit = defineEmits(["send"]);
+const send = () => {
+  // 通过派发事件，将数据传递给父组件
+  emit("send", "我是子组件的数据");
+};
+```
+
+父组件监听事件
+
+```
+<template>
+ <div>
+    <Child @send="getName"></Child>
+ </div>
+</template>
+ <script lang='ts' setup>
+ import Child from './views/child.vue'
+ const getName = (name: string) => {
+     console.log(name)
+ }
+</script>
+```
+
+子组件 TS 字面量模式派发
+
+```ts
+const emit = defineEmits<{
+  (event: "send", name: string): void;
+}>();
+const send = () => {
+  // 通过派发事件，将数据传递给父组件
+  emit("send", "我是子组件的数据");
+};
+```
+
+Vue3.3 新写法更简短
+
+```ts
+const emit = defineEmits<{
+  send: [name: string];
+}>();
+const send = () => {
+  // 通过派发事件，将数据传递给父组件
+  emit("send", "我是子组件的数据");
+};
+```
+
+## defineExpose
+
+导出一些组件内的内容
+
+```ts Child.vue
+defineExpose({
+  name: "张三",
+});
+```
+
+父组件：
+
+```Parent.vue
+<template>
+ <div>
+    <child ref="child">派发事件</child>
+ </div>
+</template>
+<script lang='ts' setup>
+import Child from './views/child.vue'
+const child = ref<InstanceType<typeof Child>>();
+const getName = () => {
+    console.log(child.value?.name)
+}
+</script>
+```
+
+## defineSlots
+
+子组件 defineSlots 只做声明不做实现 同时约束 slot 类型
+
+```Child.vue
+<template>
+ <div>
+     <ul>
+        <li v-for="(item,index) in data">
+            <slot :index="index" :item="item"></slot>
+        </li>
+     </ul>
+ </div>
+</template>
+ <script generic="T"  lang='ts' setup>
+defineProps<{
+    data: T[]
+}>()
+defineSlots<{
+   default(props:{item:T,index:number}):void
+}>()
+</script>
+```
+
+```Parent.vue
+<template>
+    <div>
+        <Child :data="list">
+            <template #default="{item}">
+                   <div>{{ item.name }}</div>
+            </template>
+        </Child>
+    </div>
+</template>
+<script lang='ts' setup>
+import Child from './views/child.vue'
+const list = [
+    {
+        name: "张三"
+    },
+    {
+        name: "李四"
+    },
+    {
+        name: "王五"
+    }
+]
+</script>
+```
+
+## defineOptions
+
+Vue3.3 新指令，常用的就是定义 name 在 seutp 语法糖模式发现 name 不好定义了需要在开启一个 script 自定义 name 现在有了 defineOptions 就可以随意定义 name 了
+
+```ts
+defineOptions({
+  name: "Child",
+  inheritAttrs: false,
+});
+```
+
+## defineModel
+
+由于该API处于实验性特性 可能会被删除暂时不讲
