@@ -14,9 +14,9 @@ categories: TypeScript
 
 <!-- more -->
 
-# 基础
+## 基础
 
-## 类型关系
+### 类型关系
 
 {% asset_img type-rel.png %}
 
@@ -30,13 +30,13 @@ categories: TypeScript
 - top type: unknown
 - 既是 top 也是 bottom: any
 
-## never
+### never
 
 是其他任意类型的子类型的类型被称为底部类型(bottom type)。
 
 **在 TypeScript 中，never 类型便为空类型和底部类型。never 类型的变量无法被赋值，与其他类型求交集为自身，求并集不参与运算。**
 
-### 应用一: 联合类型中的过滤
+#### 应用一: 联合类型中的过滤
 
 never 在联合类型中会被过滤掉：
 
@@ -84,7 +84,7 @@ type result = never | never | 'c' | 'd'
 'c' | 'd'
 ```
 
-## 应用二：防御性编程
+### 应用二：防御性编程
 
 举个具体点的例子，当你有一个 union type:
 
@@ -123,7 +123,7 @@ function handleValue(val: All) {
 
 然而他忘记了在 handleValue 里面加上针对 Baz 的处理逻辑，这个时候在 default branch 里面 val 会被收窄为 Baz，导致无法赋值给 never，产生一个编译错误。所以通过这个办法，你可以确保 handleValue 总是穷尽 (exhaust) 了所有 All 的可能类型。
 
-## unknown
+### unknown
 
 unknown 指的是不可预先定义的类型，在很多场景下，它可以替代 any 的功能同时保留静态检查的能力。
 
@@ -152,7 +152,7 @@ function test(input: unknown): number {
 }
 ```
 
-## 联合类型
+### 联合类型
 
 用 infer 合并类型
 
@@ -161,7 +161,7 @@ type A<T> = T extends { a: infer U; b: infer U } ? U : any
 type Foo = A<{ a: number; b: string }> // type Foo = string | number
 ```
 
-## 重载签名的类型不会合并
+### 重载签名的类型不会合并
 
 ```ts
 // 重载签名（函数类型定义）
@@ -208,7 +208,7 @@ declare const result = hyphenJoiner('a', 'b', 'c') // = 'a-b-c'
 join('#')('a', 'b', 'c') // = 'a#b#c'
 ```
 
-## 泛型
+### 泛型
 
 除了传入的范型，还可以利用传入的范型组合新的范型，就类似像是对一个处理函数，利用函数参数的运算，组合了一个新的在函数作用域内的变量。
 
@@ -252,15 +252,15 @@ type d = Pick<a & b, c> // { key1: string; other: boolean }
 
 过程 d 是将 a 和 b 的合并接口类型转成一个普通的对象类型。
 
-## extends 条件语句
+### extends 条件语句
 
 extends 用法和 infer 用法可以看：[官方工具类、打造自己的工具类型](/TypeScript/ts笔记（5）：官方工具类、打造自己的工具类型/)
 
-## 递归
+### 递归
 
 数组和字符串都有自己的递归方法。详细可查阅文档。
 
-### 数组
+#### 数组
 
 ```ts
 type LoopArr<T extends any[]> = T extends [infer P, ...infer R]
@@ -273,7 +273,7 @@ _该 example 没有任何实际意义，仅仅展示一下递归的方式_
 
 如果没有指定特定的子序列，P 是每次都是数组的第一项，达到逐项遍历，你也可以给指定一个子序列，从某一部分开始遍历，譬如 T extends [ 2, 3 , infer P, ...infer R]
 
-### 字符串
+#### 字符串
 
 ```ts
 type LoopStr<T extends string> = T extends `${infer P}${infer R}`
@@ -286,9 +286,9 @@ _该 example 没有任何实际意义，仅仅展示一下递归的方式_
 
 如果没有指定特定的子字符序列，P 是每次都是字符串中的第一个字符，达到逐项遍历，你也可以给指定一个子序列，从某一部分开始遍历，譬如 T extends `ABC${infer P}${infer R}`
 
-## 好用的小特性
+### 好用的小特性
 
-### name
+#### name
 
 如果你打算通过构造函数以外的其他方式去初始化类中的字段 (例如，也许外部库一定会帮你填充类的一部分)，则可以使用 确定赋值断言运算符 !，它只能被用在你确定安全的地方
 
@@ -299,7 +299,7 @@ class OKGreeter {
 }
 ```
 
-### Type-only Field Declarations
+#### Type-only Field Declarations
 
 当配置文件里的 `useDefineForClassFields` 是 true 时, 类字段在父类构造函数完成后初始化，覆盖父类设置的任何值。当您只想为继承的字段重新声明更准确的类型时，这可能是一个问题。要处理这些情况，你可以写 声明 向 TypeScript 指示此字段声明不应有运行时效果。
 
@@ -329,13 +329,13 @@ class DogHouse extends AnimalHouse {
 }
 ```
 
-### 类型谓词 is
+#### 类型谓词 is
 
 可以看[类型守卫、类型兼容、增强类型系统](/TypeScript/ts笔记（4）：类型守卫、类型兼容、增强类型系统/#自定义类型守卫)
 
 通常我们使用 is 关键字（类型谓词）在函数的返回值中，从而对于函数传入的参数进行类型保护。
 
-# interface 和 type 关键字
+## interface 和 type 关键字
 
 interface 和 type 两个关键字因为其功能比较接近，常常引起新手的疑问：应该在什么时候用 type，什么时候用 interface？interface 的特点如下：
 
@@ -392,9 +392,9 @@ testFunc.someProperty = 3;    // 有类型提醒
 
 {% asset_img interface-type.png %}
 
-# 反直觉的一些特性
+## 反直觉的一些特性
 
-## 数组是对象的一种
+### 数组是对象的一种
 
 ```ts
 // Ts 示例：希望 [1, () => number, string] 能够被处理成 [1, number, string]
@@ -408,7 +408,7 @@ type GetType1Test = GetType1<[1, () => number, string]>
 
 数组是 key 为 0，1，2 等数字索引的特殊对象，都可以用映射类型的 in 遍历
 
-## keyof 索引是公有属性 key 的联合
+### keyof 索引是公有属性 key 的联合
 
 ```ts
 interface Eg1 {
@@ -449,7 +449,7 @@ type V3 = Eg1[keyof Eg1]
 
 交叉类型取的多个类型的并集，但是如果相同 key 但是类型不同，则该 key 为 never。
 
-## 条件类型的分布式特性
+### 条件类型的分布式特性
 
 ```ts
 // type A1 = 1
@@ -478,7 +478,7 @@ type P<T> = [T] extends ['x'] ? 1 : 2
 type A4 = P<'x' | 'y'>
 ```
 
-## 对象字面量的 excess property check
+### 对象字面量的 excess property check
 
 子类型中必须包含源类型所有的属性和方法:
 
@@ -507,8 +507,10 @@ getPointX({ x: 1, y: '2' }) // error
 
 这是 ts 中的另一个特性，叫做: **excess property check ，当传入的参数是一个对象字面量时，会进行额外属性检查**。
 
-## 判断never
+### 判断never
+
 先来看一个反直觉的现象：
+
 ```ts
 // 1.
 type JudgeNever = never extends never ? true : false; // true
@@ -524,9 +526,9 @@ type testIsNever = IsNever<never>  // true
 
 never是一个特殊的联合类型（它本身是一个底部类型），它没有任何一个成员，而根据Distributive Conditional Types，联合类型作为泛型传入后，会分开计算，因此当输入是never时，因为他一个成员都没有，自然也不需要计算了，直接返回never。而`[T]`是ts实现的一个特性，能够打破这种Distributive Conditional Types规则。 然后似乎范型默认是当联合类型处理条件语句？所以1和2的结构不同 如果不能理解咱就记住：`[T] extends [never]`只能这么判断类型是否是never
 
-# 别的一些知识点
+## 别的一些知识点
 
-## 全局模块 vs. 文件模块
+### 全局模块 vs. 文件模块
 
 当我们没写import或者export的时候，ts会认为我们在写全局模块：
 
@@ -544,7 +546,7 @@ const bar = foo
 export const bar = foo // error
 ```
 
-## 字符串转数字
+### 字符串转数字
 
 使用场景：字符串的逐个解析有递归特性，我们可以转成字符串后做一些这方面的处理，处理完后还需要转回去
 
@@ -554,7 +556,7 @@ type ToNumber<T> = T extends `${infer N extends number}`
   : T
 ```
 
-## 映射类型 key值的交集与并集
+### 映射类型 key值的交集与并集
 
 ```ts
 type foo = {
