@@ -1,5 +1,5 @@
 ---
-title: rust-note-course-1
+title: Rust圣经学习笔记（1）
 date: 2024-01-03 17:05:45
 tags:
   - Rust
@@ -437,6 +437,7 @@ fn main() {
     println!("rect1 is {:?}", rect1);
 }
 ```
+
 当结构体较大时，我们可能希望能够有更好的输出表现，此时可以使用 `{:#?}` 来替代 `{:?}`
 
 还有一个简单的输出 debug 信息的方法，那就是使用 `dbg!` 宏，它会拿走表达式的所有权，然后打印出相应的文件名、行号等 debug 信息，当然还有我们需要的表达式的求值结果。除此之外，它最终还会把表达式值的所有权返回！`dbg!` 输出到标准错误输出 `stderr`，而 `println!` 输出到标准输出 `stdout`。
@@ -457,4 +458,221 @@ fn main() {
 
     dbg!(&rect1);
 }
+```
+
+### 枚举
+
+```rust
+enum Message {
+    Quit,
+    Move { x: i32, y: i32 },
+    Write(String),
+    ChangeColor(i32, i32, i32),
+}
+
+fn main() {
+    let m1 = Message::Quit;
+    let m2 = Message::Move{x:1,y:1};
+    let m3 = Message::ChangeColor(255,255,0);
+}
+```
+
+和 C 语言的联合体类似。
+
+用 Option 枚举处理空值
+
+```rust
+// Option的定义
+enum Option<T> {
+    Some(T),
+    None,
+}
+
+// 使用
+fn plus_one(x: Option<i32>) -> Option<i32> {
+    match x {
+        None => None,
+        Some(i) => Some(i + 1),
+    }
+}
+
+let five = Some(5);
+let six = plus_one(five);
+let none = plus_one(None);
+```
+
+#### 数组、动态数组
+
+在 Rust 中，最常用的数组有两种，第一种是速度很快但是长度固定的 `array`，第二种是可动态增长的但是有性能损耗的 `Vector`，在本书中，我们称 `array` 为数组，`Vector` 为动态数组。
+
+```rust
+fn main() {
+    let a = [1, 2, 3, 4, 5];
+    let a: [i32; 5] = [1, 2, 3, 4, 5];
+    let a = [3; 5]; // a 数组包含 5 个元素，这些元素的初始化值为 3
+    let a = [0u8; 3]; //声明数组类型时同时初始化
+}
+```
+
+## 流程控制
+
+| 使用方法                      | 等价使用方式                                      | 所有权     |
+| ----------------------------- | ------------------------------------------------- | ---------- |
+| `for item in collection`      | `for item in IntoIterator::into_iter(collection)` | 转移所有权 |
+| `for item in &collection`     | `for item in collection.iter()`                   | 不可变借用 |
+| `for item in &mut collection` | `for item in collection.iter_mut()`               | 可变借用   |
+
+两种循环方式优劣对比：
+
+```rust
+// 第一种
+let collection = [1, 2, 3, 4, 5];
+for i in 0..collection.len() {
+  let item = collection[i];
+  // ...
+}
+
+// 第二种
+for item in collection {
+
+}
+```
+
+- **性能**：第一种使用方式中  `collection[index]`  的索引访问，会因为边界检查(Bounds Checking)导致运行时的性能损耗 —— Rust 会检查并确认  `index`  是否落在集合内，但是第二种直接迭代的方式就不会触发这种检查，因为编译器会在编译时就完成分析并证明这种访问是合法的
+- **安全**：第一种方式里对  `collection`  的索引访问是非连续的，存在一定可能性在两次访问之间，`collection`  发生了变化，导致脏数据产生。而第二种直接迭代的方式是连续访问，因此不存在这种风险( 由于所有权限制，在访问过程中，数据并不会发生变化)。
+
+`while` 和 `loop` 循环
+
+```rust
+let mut n = 0;
+while n <= 5  {
+    println!("{}!", n);
+    n = n + 1;
+}
+
+let mut n = 0;
+loop {
+    if n > 5 {
+        break
+    }
+    println!("{}", n);
+    n+=1;
+}
+```
+
+## 模式匹配
+
+### match
+
+```rust
+match target {
+    模式1 => 表达式1,
+    模式2 => {
+        语句1;
+        语句2;
+        表达式2
+    },
+    _ => 表达式3
+}
+
+#[derive(Debug)]
+enum UsState {
+    Alabama,
+    Alaska,
+    // --snip--
+}
+enum Coin {
+    Penny,
+    Nickel,
+    Dime,
+    Quarter(UsState), // 25美分硬币
+}
+fn value_in_cents(coin: Coin) -> u8 {
+    match coin {
+        Coin::Penny => 1,
+        Coin::Nickel => 5,
+        Coin::Dime => 10,
+        Coin::Quarter(state) => {
+            println!("State quarter from {:?}!", state);
+            25
+        },
+    }
+}
+enum Action {
+    Say(String),
+    MoveTo(i32, i32),
+    ChangeColorRGB(u16, u16, u16),
+}
+fn main() {
+    let actions = [
+        Action::Say("Hello Rust".to_string()),
+        Action::MoveTo(1,2),
+        Action::ChangeColorRGB(255,255,0),
+    ];
+    for action in actions {
+        match action {
+            Action::Say(s) => {
+                println!("{}", s);
+            },
+            Action::MoveTo(x, y) => {
+                println!("point from (0, 0) move to ({}, {})", x, y);
+            },
+            Action::ChangeColorRGB(r, g, _) => {
+                println!("change color into '(r:{}, g:{}, b:0)', 'b' has been ignored",
+                    r, g,
+                );
+            }
+        }
+    }
+}
+```
+
+### if let 匹配
+
+```rust
+let v = Some(3u8);
+match v {
+    Some(3) => println!("three"),
+    _ => (),
+}
+if let Some(3) = v {
+    println!("three");
+}
+```
+
+当你只要匹配一个条件，且忽略其他条件时就用 if let ，否则都用 match。
+
+### matches!宏
+
+```rust
+enum MyEnum {
+    Foo,
+    Bar
+}
+
+fn main() {
+    let v = vec![MyEnum::Foo,MyEnum::Bar,MyEnum::Foo];
+}
+```
+
+现在如果想对 v 进行过滤，只保留类型是 MyEnum::Foo 的元素，你可能想这么写：
+
+```rust
+v.iter().filter(|x| x == MyEnum::Foo);
+```
+
+但是，实际上这行代码会报错，因为你无法将 x 直接跟一个枚举成员进行比较。改成：
+
+```rust
+v.iter().filter(|x| matches!(x, MyEnum::Foo));
+```
+
+很简单也很简洁，再来看看更多的例子：
+
+```rust
+let foo = 'f';
+assert!(matches!(foo, 'A'..='Z' | 'a'..='z'));
+
+let bar = Some(4);
+assert!(matches!(bar, Some(x) if x > 2));
 ```
