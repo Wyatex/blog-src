@@ -84,7 +84,7 @@ type result = never | never | 'c' | 'd'
 'c' | 'd'
 ```
 
-### 应用二：防御性编程
+#### 应用二：防御性编程
 
 举个具体点的例子，当你有一个 union type:
 

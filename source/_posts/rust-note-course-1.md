@@ -7,7 +7,9 @@ tags:
 categories: Rust
 ---
 
-记录一下学习 course.rs 过程中容易忘记的点
+记录一下学习 course.rs 过程中容易忘记的点，内容包括基础入门变量到模式匹配
+
+<!-- more -->
 
 ## 解构式赋值
 
@@ -675,4 +677,138 @@ assert!(matches!(foo, 'A'..='Z' | 'a'..='z'));
 
 let bar = Some(4);
 assert!(matches!(bar, Some(x) if x > 2));
+```
+
+### 其他模式匹配
+
+解构并且重命名
+
+```rust
+struct Point {
+    x: i32,
+    y: i32,
+}
+
+fn main() {
+    let p = Point { x: 0, y: 7 };
+
+    let Point { x: a, y: b } = p;
+    assert_eq!(0, a);
+    assert_eq!(7, b);
+}
+```
+
+固定某个字段：
+
+```rust
+fn main() {
+    let p = Point { x: 0, y: 7 };
+
+    match p {
+        Point { x, y: 0 } => println!("On the x axis at {}", x), // 指定匹配 y 为 0 的 Point
+        Point { x: 0, y } => println!("On the y axis at {}", y), // 匹配 y 不为 0，x 为 0 的 Point
+        Point { x, y } => println!("On neither axis: ({}, {})", x, y), // 匹配 x 不为 0，y 也不为 0 的 Point
+    }
+}
+```
+
+匹配守卫:**匹配守卫**（match guard）是一个位于 match 分支模式之后的额外 if 条件，它能为分支模式提供更进一步的匹配条件。
+
+```rust
+let num = Some(4);
+
+match num {
+    Some(x) if x < 5 => println!("less than five: {}", x),
+    Some(x) => println!("{}", x),
+    None => (),
+}
+```
+
+```rust
+fn main() {
+    let x = Some(5);
+    let y = 10;
+
+    match x {
+        Some(50) => println!("Got 50"),
+        Some(n) if n == y => println!("Matched, n = {}", n),
+        _ => println!("Default case, x = {:?}", x),
+    }
+
+    println!("at the end: x = {:?}, y = {}", x, y);
+}
+```
+
+匹配守卫 if n == y 并不是一个模式所以没有引入新变量。这个 y 正是 外部的 y 而不是新的覆盖变量 y，这样就可以通过比较 n 和 y 来表达寻找一个与外部 y 相同的值的概念了。
+
+```rust
+let x = 4;
+let y = false;
+
+match x {
+    4 | 5 | 6 if y => println!("yes"), // 先当与(4 | 5 | 6) if y => ...
+    _ => println!("no"),
+}
+```
+
+因为永远是 false，所以不会进入第一句
+
+@绑定
+
+```rust
+enum Message {
+    Hello { id: i32 },
+}
+
+let msg = Message::Hello { id: 5 };
+
+match msg {
+    Message::Hello { id: id_variable @ 3..=7 } => {
+        println!("Found an id in range: {}", id_variable)
+    },
+    Message::Hello { id: 10..=12 } => {
+        println!("Found an id in another range")
+    },
+    Message::Hello { id } => {
+        println!("Found some other id: {}", id)
+    },
+}
+```
+
+@前绑定后解构(Rust 1.56 新增)
+
+```rust
+#[derive(Debug)]
+struct Point {
+    x: i32,
+    y: i32,
+}
+
+fn main() {
+    // 绑定新变量 `p`，同时对 `Point` 进行解构
+    let p @ Point {x: px, y: py } = Point {x: 10, y: 23};
+    println!("x: {}, y: {}", px, py);
+    println!("{:?}", p);
+
+
+    let point = Point {x: 10, y: 5};
+    if let p @ Point {x: 10, y} = point {
+        println!("x is 10 and y is {} in {:?}", y, p);
+    } else {
+        println!("x was not 10 :(");
+    }
+}
+```
+
+@新特性(Rust 1.53 新增)
+
+```rust
+fn main() {
+    match 1 {
+        num @ (1 | 2) => { // 1 | 2必须要括号包起来不然编译不通过
+            println!("{}", num);
+        }
+        _ => {}
+    }
+}
 ```
