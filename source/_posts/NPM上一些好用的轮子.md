@@ -15,12 +15,17 @@ categories: JavaScript
 - yocto-queue： 简单的队列数据结构，（入队出队时间O(1)）
 - mitt：简单实用的事件总线工具
 - autofit.js：自适应屏幕大小
-- prompts：命令行提示工具，可以用来写cli
 - class-transformer: 将object转成class
 - class-validator: 简化验证的库
+- walkdir: 遍历文件夹
 
 一些cli工具：
 
 - npkill：快速删除node_modules目录
 - npm-check-updates：检查项目依赖更新（快捷命令ncu）
 - nvm-windows：windows下的node版本管理工具（设置淘宝镜像下载更快：https://npmmirror.com/mirrors/node/）
+
+## cli
+
+- prompts：命令行提示工具，可以用来写交互式cli
+- cac: 命令行参数提示、解析工具
