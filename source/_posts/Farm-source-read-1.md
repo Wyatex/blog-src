@@ -58,14 +58,44 @@ cli
       root: string,
       options: FarmCLIServerOptions & GlobalFarmCLIOptions
     ) => {
-      // ...
+      // 处理传入的参数，包括过滤重复参数、缩写参数、设置默认值...
       // 引入@farmfe/core，并执行core提供的start方法，启动本地调试的编译环境，类似vite命令
       const { start } = await resolveCore();
-      handleAsyncOperationErrors(
-        start(defaultOptions),
+      handleAsyncOperationErrors( // handleAsyncOperationErrors 用来 catch 被 reject 的 promise
+        start(defaultOptions), // 处理完cli参数，交给start启动编译
         'Failed to start server'
       );
     }
   );
-
 ```
+
+可以看出主要用了cac来作为参数解析库，全部链式操作设置参数提示、回调，非常方便。
+
+同理在下面设置一好build、watch等命令。
+
+```js
+// 代理一下process.emit方法，将node的实验提示过滤，其余的提示按原样提示
+function preventExperimentalWarning() {
+  const defaultEmit = process.emit;
+  process.emit = function (...args: any[]) {
+    if (args[1].name === 'ExperimentalWarning') {
+      return undefined;
+    }
+    return defaultEmit.call(this, ...args);
+  };
+}
+
+preventExperimentalWarning()
+
+// 设置help命令提示
+cli.help();
+
+// 设置cli版本
+cli.version(version);
+
+//开始解析命令和参数
+cli.parse();
+```
+
+
+
