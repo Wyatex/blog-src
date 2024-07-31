@@ -17,7 +17,14 @@ categories: JavaScript
 - autofit.js：自适应屏幕大小
 - class-transformer: 将object转成class
 - class-validator: 简化验证的库
+
+适合node：
+
+- consola 日志、提示库
+- chokidar：跨平台的文件监听库
 - walkdir: 遍历文件夹
+- fast-glob：轻量快速的遍历文件夹
+
 
 一些cli工具：
 

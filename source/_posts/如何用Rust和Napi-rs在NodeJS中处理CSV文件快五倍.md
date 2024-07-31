@@ -3,7 +3,7 @@ title: 如何用Rust和Napi-rs在NodeJS中处理CSV文件快五倍
 date: 2023-04-30 19:46:36
 tags:
 - node
-- rust
+- Rust
 - napi-rs
 categories: 翻译
 ---
