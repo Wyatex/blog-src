@@ -17,6 +17,7 @@ categories: JavaScript
 - autofit.js：自适应屏幕大小
 - class-transformer: 将object转成class
 - class-validator: 简化验证的库
+- zod: 轻量级类型验证库
 
 适合node：
 
@@ -36,3 +37,4 @@ categories: JavaScript
 
 - prompts：命令行提示工具，可以用来写交互式cli
 - cac: 命令行参数提示、解析工具
+- mri/minimist: 命令行参数解析，mri更轻量化
