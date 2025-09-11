@@ -1,6 +1,6 @@
 ---
 title: LangChain.js学习笔记（3）
-date: 2025-09-06 11:34:11
+date: 2025-05-29 11:34:11
 tags:
 - LangChain.js
 - LLM
