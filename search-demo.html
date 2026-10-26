@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hexo JSONL 流式增量缓存 + BM25 搜索 Demo</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --muted: #64748b;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 0 20px;
+      line-height: 1.6;
+    }
+    .search-box {
+      background: var(--card);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      border: 1px solid var(--border);
+    }
+    .search-input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px 16px;
+      font-size: 16px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-input:focus {
+      border-color: var(--primary);
+    }
+    .status-bar {
+      margin-top: 12px;
+      font-size: 13px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+      background: #dbeafe;
+      color: #1e40af;
+    }
+    .badge.success {
+      background: #dcfce7;
+      color: #166534;
+    }
+    .result-list {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .result-item {
+      background: var(--card);
+      padding: 16px 20px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .result-item:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    }
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+    }
+    .result-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--primary);
+      text-decoration: none;
+    }
+    .result-title:hover {
+      text-decoration: underline;
+    }
+    .result-meta {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .result-snippet {
+      margin-top: 8px;
+      font-size: 14px;
+      color: #334155;
+      word-break: break-all;
+    }
+    mark {
+      background-color: #fef08a;
+      color: #854d0e;
+      padding: 0 2px;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>博客全文检索 (JSONL Stream + IndexedDB + BM25)</h2>
+
+  <div class="search-box">
+    <input
+      type="search"
+      id="searchInput"
+      class="search-input"
+      placeholder="输入关键词搜索文章（支持中文分词与 BM25 相关性排序）..."
+      autocomplete="off"
+    />
+    <div class="status-bar">
+      <span id="syncStatus">正在启动 Worker 并同步索引...</span>
+      <span id="searchStats"></span>
+    </div>
+  </div>
+
+  <div id="resultList" class="result-list"></div>
+
+  <script>
+    const searchInput = document.getElementById('searchInput');
+    const syncStatus = document.getElementById('syncStatus');
+    const searchStats = document.getElementById('searchStats');
+    const resultList = document.getElementById('resultList');
+
+    // 1. 创建 Web Worker
+    const worker = new Worker('/search-worker.js');
+
+    // 2. 启动时触发流式同步
+    worker.postMessage({
+      type: 'INIT',
+      payload: { url: '/search.jsonl' }
+    });
+
+    // 3. 接收 Worker 消息
+    worker.onmessage = (e) => {
+      const { type, payload } = e.data;
+
+      if (type === 'cache_ready') {
+        syncStatus.innerHTML = `已从 IndexedDB 秒开加载 <b>${payload.count}</b> 篇文章，正在后台检查增量更新...`;
+      }
+
+      if (type === 'progress') {
+        syncStatus.textContent = `正在流式同步新文章：已分词 ${payload.updated} 篇 (扫描 ${payload.scanned}/${payload.total})...`;
+      }
+
+      if (type === 'sync_complete') {
+        const cancelTag = payload.canceledEarly
+          ? `<span class="badge success">命中缓存提前断开流 (仅读 ${payload.scannedLines} 行)</span>`
+          : `<span class="badge">全量读取完成</span>`;
+
+        syncStatus.innerHTML = `
+          索引就绪：共 <b>${payload.totalDocs}</b> 篇，词项 <b>${payload.totalTerms}</b> 个
+          (新增/更新 ${payload.updatedCount} 篇，清理 ${payload.deletedCount} 篇，耗时 ${payload.elapsedMs}ms)
+          ${cancelTag}
+        `;
+
+        // 如果输入框已有内容，同步完成后自动刷新一次搜索结果
+        if (searchInput.value.trim()) {
+          triggerSearch(searchInput.value.trim());
+        }
+      }
+
+      if (type === 'search_results') {
+        searchStats.textContent = `找到 ${payload.results.length} 条结果 (${payload.elapsedMs} ms)`;
+        renderResults(payload.results);
+      }
+
+      if (type === 'error') {
+        syncStatus.innerHTML = `<span style="color: #dc2626;">同步出错：${payload}</span>`;
+      }
+    };
+
+    // 4. 输入防抖搜索
+    let debounceTimer = null;
+    searchInput.addEventListener('input', (e) => {
+      clearTimeout(debounceTimer);
+      const query = e.target.value.trim();
+      if (!query) {
+        resultList.innerHTML = '';
+        searchStats.textContent = '';
+        return;
+      }
+      debounceTimer = setTimeout(() => triggerSearch(query), 120);
+    });
+
+    function triggerSearch(query) {
+      worker.postMessage({
+        type: 'SEARCH',
+        payload: { query, limit: 20 }
+      });
+    }
+
+    function renderResults(results) {
+      if (results.length === 0) {
+        resultList.innerHTML = '<div style="text-align:center;color:#64748b;padding:30px;">没有找到匹配的文章</div>';
+        return;
+      }
+
+      resultList.innerHTML = results.map(item => {
+        const dateStr = new Date(item.updated).toLocaleDateString('zh-CN');
+        return `
+          <div class="result-item">
+            <div class="result-header">
+              <a class="result-title" href="${item.url}">${item.title}</a>
+              <span class="result-meta">BM25: ${item.score} | 更新于 ${dateStr}</span>
+            </div>
+            <div class="result-snippet">${item.snippet}</div>
+          </div>
+        `;
+      }).join('');
+    }
+  </script>
+</body>
+</html>
