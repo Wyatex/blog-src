@@ -3,51 +3,85 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hexo JSONL 流式增量缓存 + BM25 搜索 Demo</title>
+  <title>Hexo 流式增量缓存 + BM25 全文检索 Demo</title>
   <style>
     :root {
       --primary: #2563eb;
+      --primary-hover: #1d4ed8;
       --bg: #f8fafc;
       --card: #ffffff;
       --border: #e2e8f0;
       --text: #1e293b;
       --muted: #64748b;
+      --tag-bg: #eff6ff;
+      --tag-color: #1d4ed8;
     }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
       background: var(--bg);
       color: var(--text);
-      max-width: 800px;
+      max-width: 860px;
       margin: 40px auto;
       padding: 0 20px;
       line-height: 1.6;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    h2 {
+      margin: 0;
+      font-size: 24px;
+      color: #0f172a;
+    }
+    .btn-clear {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-clear:hover {
+      background: #fca5a5;
     }
     .search-box {
       background: var(--card);
       padding: 20px;
       border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
       border: 1px solid var(--border);
+    }
+    .search-input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
     }
     .search-input {
       width: 100%;
       box-sizing: border-box;
-      padding: 12px 16px;
+      padding: 14px 18px;
       font-size: 16px;
       border: 2px solid var(--border);
       border-radius: 8px;
       outline: none;
-      transition: border-color 0.2s;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
     .search-input:focus {
       border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
     }
     .status-bar {
-      margin-top: 12px;
+      margin-top: 14px;
       font-size: 13px;
       color: var(--muted);
       display: flex;
       justify-content: space-between;
+      align-items: center;
       flex-wrap: wrap;
       gap: 8px;
     }
@@ -101,35 +135,60 @@
       color: var(--muted);
       white-space: nowrap;
     }
+    .result-tags {
+      margin-top: 6px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .tag-chip {
+      background: var(--tag-bg);
+      color: var(--tag-color);
+      font-size: 11px;
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
     .result-snippet {
       margin-top: 8px;
       font-size: 14px;
       color: #334155;
       word-break: break-all;
+      line-height: 1.5;
     }
-    mark {
+    mark.search-keyword {
       background-color: #fef08a;
       color: #854d0e;
-      padding: 0 2px;
+      padding: 0 3px;
       border-radius: 3px;
       font-weight: 600;
+    }
+    .empty-tip {
+      text-align: center;
+      color: var(--muted);
+      padding: 40px 0;
+      font-size: 15px;
     }
   </style>
 </head>
 <body>
 
-  <h2>博客全文检索 (JSONL Stream + IndexedDB + BM25)</h2>
+  <div class="header">
+    <h2>博客全文检索优化引擎</h2>
+    <button id="btnClear" class="btn-clear" title="清除本地 IndexedDB 缓存测试全量流式冷启动">清空本地缓存重新测试</button>
+  </div>
 
   <div class="search-box">
-    <input
-      type="search"
-      id="searchInput"
-      class="search-input"
-      placeholder="输入关键词搜索文章（支持中文分词与 BM25 相关性排序）..."
-      autocomplete="off"
-    />
+    <div class="search-input-wrap">
+      <input
+        type="search"
+        id="searchInput"
+        class="search-input"
+        placeholder="搜索文章、标签、分类（支持中文分词、BM25与短语精确命中）..."
+        autocomplete="off"
+      />
+    </div>
     <div class="status-bar">
-      <span id="syncStatus">正在启动 Worker 并同步索引...</span>
+      <span id="syncStatus">正在初始化 Worker 索引...</span>
       <span id="searchStats"></span>
     </div>
   </div>
@@ -141,56 +200,74 @@
     const syncStatus = document.getElementById('syncStatus');
     const searchStats = document.getElementById('searchStats');
     const resultList = document.getElementById('resultList');
+    const btnClear = document.getElementById('btnClear');
 
-    // 1. 创建 Web Worker
-    const worker = new Worker('/search-worker.js');
+    let worker = null;
+    let currentRequestId = 0;
 
-    // 2. 启动时触发流式同步
-    worker.postMessage({
-      type: 'INIT',
-      payload: { url: '/search.jsonl' }
+    function initWorker() {
+      if (worker) worker.terminate();
+      worker = new Worker('/search-worker.js');
+
+      worker.postMessage({
+        type: 'INIT',
+        payload: { url: '/search.jsonl' }
+      });
+
+      worker.onmessage = (e) => {
+        const { type, payload } = e.data;
+
+        if (type === 'cache_ready') {
+          syncStatus.innerHTML = `已从 IndexedDB 瞬间加载 <b>${payload.count}</b> 篇文章（词项 ${payload.totalTerms}），正在后台检查增量更新...`;
+        }
+
+        if (type === 'progress') {
+          syncStatus.textContent = `流式同步增量文章：已分词 ${payload.updated} 篇 (扫描 ${payload.scanned}/${payload.total})...`;
+        }
+
+        if (type === 'sync_complete') {
+          const cancelTag = payload.canceledEarly
+            ? `<span class="badge success">命中增量缓存提前断开流 (仅读 ${payload.scannedLines} 行)</span>`
+            : `<span class="badge">全量拉取完成</span>`;
+
+          syncStatus.innerHTML = `
+            索引就绪：共 <b>${payload.totalDocs}</b> 篇，词项 <b>${payload.totalTerms}</b>
+            (更新 ${payload.updatedCount} 篇，清理 ${payload.deletedCount} 篇，耗时 ${payload.elapsedMs}ms)
+            ${cancelTag}
+          `;
+
+          if (searchInput.value.trim()) {
+            triggerSearch(searchInput.value.trim());
+          }
+        }
+
+        if (type === 'search_results') {
+          // 仅渲染最新一次发出的请求结果，避免竞态覆盖
+          if (payload.requestId === currentRequestId) {
+            searchStats.textContent = `找到 ${payload.results.length} 条结果 (${payload.elapsedMs} ms)`;
+            renderResults(payload.results);
+          }
+        }
+
+        if (type === 'cleared') {
+          alert('IndexedDB 缓存已清空，即将重新建立索引');
+          location.reload();
+        }
+
+        if (type === 'error') {
+          syncStatus.innerHTML = `<span style="color: #dc2626;">同步失败：${payload}</span>`;
+        }
+      };
+    }
+
+    initWorker();
+
+    btnClear.addEventListener('click', () => {
+      if (confirm('确定要清除浏览器 IndexedDB 缓存吗？')) {
+        worker.postMessage({ type: 'CLEAR' });
+      }
     });
 
-    // 3. 接收 Worker 消息
-    worker.onmessage = (e) => {
-      const { type, payload } = e.data;
-
-      if (type === 'cache_ready') {
-        syncStatus.innerHTML = `已从 IndexedDB 秒开加载 <b>${payload.count}</b> 篇文章，正在后台检查增量更新...`;
-      }
-
-      if (type === 'progress') {
-        syncStatus.textContent = `正在流式同步新文章：已分词 ${payload.updated} 篇 (扫描 ${payload.scanned}/${payload.total})...`;
-      }
-
-      if (type === 'sync_complete') {
-        const cancelTag = payload.canceledEarly
-          ? `<span class="badge success">命中缓存提前断开流 (仅读 ${payload.scannedLines} 行)</span>`
-          : `<span class="badge">全量读取完成</span>`;
-
-        syncStatus.innerHTML = `
-          索引就绪：共 <b>${payload.totalDocs}</b> 篇，词项 <b>${payload.totalTerms}</b> 个
-          (新增/更新 ${payload.updatedCount} 篇，清理 ${payload.deletedCount} 篇，耗时 ${payload.elapsedMs}ms)
-          ${cancelTag}
-        `;
-
-        // 如果输入框已有内容，同步完成后自动刷新一次搜索结果
-        if (searchInput.value.trim()) {
-          triggerSearch(searchInput.value.trim());
-        }
-      }
-
-      if (type === 'search_results') {
-        searchStats.textContent = `找到 ${payload.results.length} 条结果 (${payload.elapsedMs} ms)`;
-        renderResults(payload.results);
-      }
-
-      if (type === 'error') {
-        syncStatus.innerHTML = `<span style="color: #dc2626;">同步出错：${payload}</span>`;
-      }
-    };
-
-    // 4. 输入防抖搜索
     let debounceTimer = null;
     searchInput.addEventListener('input', (e) => {
       clearTimeout(debounceTimer);
@@ -200,30 +277,39 @@
         searchStats.textContent = '';
         return;
       }
-      debounceTimer = setTimeout(() => triggerSearch(query), 120);
+      debounceTimer = setTimeout(() => triggerSearch(query), 80);
     });
 
     function triggerSearch(query) {
+      currentRequestId++;
       worker.postMessage({
         type: 'SEARCH',
-        payload: { query, limit: 20 }
+        payload: {
+          query,
+          limit: 25,
+          requestId: currentRequestId
+        }
       });
     }
 
     function renderResults(results) {
       if (results.length === 0) {
-        resultList.innerHTML = '<div style="text-align:center;color:#64748b;padding:30px;">没有找到匹配的文章</div>';
+        resultList.innerHTML = '<div class="empty-tip">未找到与关键词相关的文章</div>';
         return;
       }
 
       resultList.innerHTML = results.map(item => {
-        const dateStr = new Date(item.updated).toLocaleDateString('zh-CN');
+        const dateStr = item.updated ? new Date(item.updated).toLocaleDateString('zh-CN') : '';
+        const tagsHtml = (item.tags || []).map(t => `<span class="tag-chip">#${t}</span>`).join('');
+        const catsHtml = (item.categories || []).map(c => `<span class="tag-chip">📂 ${c}</span>`).join('');
+
         return `
           <div class="result-item">
             <div class="result-header">
               <a class="result-title" href="${item.url}">${item.title}</a>
-              <span class="result-meta">BM25: ${item.score} | 更新于 ${dateStr}</span>
+              <span class="result-meta">BM25: ${item.score} | ${dateStr}</span>
             </div>
+            ${(tagsHtml || catsHtml) ? `<div class="result-tags">${catsHtml}${tagsHtml}</div>` : ''}
             <div class="result-snippet">${item.snippet}</div>
           </div>
         `;

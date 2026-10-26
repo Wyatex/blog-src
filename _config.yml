@@ -101,6 +101,11 @@ ignore:
 ## Themes: https://hexo.io/themes/
 theme: next
 
+# Search setting
+search:
+  path: search.jsonl
+  field: post
+
 # Deployment
 ## Docs: https://hexo.io/docs/one-command-deployment
 deploy:
