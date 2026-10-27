@@ -221,9 +221,8 @@
         const { type, payload } = e.data;
 
         if (type === 'cache_ready') {
-          loadedCount = payload.count;
           if (!totalCount) totalCount = payload.count;
-          syncStatus.innerHTML = `已从 IndexedDB 瞬间加载 <b>${payload.count}</b> 篇文章（词项 ${payload.totalTerms}），正在后台检查增量更新...`;
+          syncStatus.innerHTML = `已从 IndexedDB 瞬间加载 <b>${payload.count}</b> 篇缓存（词项 ${payload.totalTerms}），可立即检索，正在后台检查增量更新...`;
         }
 
         if (type === 'progress') {

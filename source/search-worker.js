@@ -231,10 +231,11 @@ async function syncJsonlStream(url, localMap) {
   let lastProgressTime = 0;
   function reportProgress(force = false) {
     const now = performance.now();
-    if (!force && now - lastProgressTime < 60) return;
+    if (!force && now - lastProgressTime < 40) return;
     lastProgressTime = now;
     const total = meta ? meta.total : (localMap.size || docStore.size || 0);
-    const loaded = docStore.size;
+    // 从 0 开始，真实反映当前流式拉取/同步的文章数量
+    const loaded = postIndex;
     self.postMessage({
       type: 'progress',
       payload: {
@@ -287,7 +288,8 @@ async function syncJsonlStream(url, localMap) {
           }
         }
 
-        // 收到元数据立即发出首发进度
+        // 收到元数据立即发出首发进度：从 0 开始
+        postIndex = 0;
         reportProgress(true);
         continue;
       }
@@ -310,6 +312,9 @@ async function syncJsonlStream(url, localMap) {
           } catch (cancelErr) {
             // 忽略取消流产生的非致命错误
           }
+          // 命中后面全量旧缓存，进度直接跳满到 186/186！
+          postIndex = meta ? meta.total : (localMap.size || docStore.size);
+          reportProgress(true);
           break outer;
         }
         reportProgress(false);
@@ -353,6 +358,9 @@ async function syncJsonlStream(url, localMap) {
     }
   }
 
+  if (!canceledEarly && meta && meta.total > 0) {
+    postIndex = meta.total;
+  }
   reportProgress(true);
 
   return {

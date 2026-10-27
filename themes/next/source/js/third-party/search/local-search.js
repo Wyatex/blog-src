@@ -115,8 +115,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (type === 'cache_ready') {
           isReady = true;
-          loadedCount = payload.count || loadedCount;
-          if (!totalCount) totalCount = payload.count;
+          // 本地已有缓存文章立即可搜，但网络同步进度严格从 0 开始计数
+          if (!totalCount) totalCount = payload.cachedCount || payload.count || 0;
 
           if (input && input.value.trim()) {
             triggerSearch(input.value.trim());
