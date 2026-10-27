@@ -1,0 +1,7 @@
+allowBuilds:
+  '@fortawesome/fontawesome-free': true
+  hexo-util: true
+  highlight.js: true
+  protobufjs: true
+minimumReleaseAgeExclude:
+  - hexo-related-posts2@1.0.0
