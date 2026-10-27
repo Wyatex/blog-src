@@ -37,6 +37,7 @@ const segmenter = new Intl.Segmenter('zh-CN', { granularity: 'word' });
 // 倒排索引与文档字典
 const invertedIndex = new Map(); // Map<term, Map<docId, weightedTF>>
 const docStore = new Map();      // Map<docId, { id, t, u, m, g, k, c, dl, tf }>
+let totalDocLength = 0;          // 所有文档的加权有效长度总和
 let avgDocLength = 0;            // 平均文档有效长度
 
 // ==========================================
@@ -146,7 +147,70 @@ function processPost(rawPost) {
 }
 
 // ==========================================
-// 3. 流式拉取 JSONL + 智能增量终止
+// ==========================================
+// 3. 动态索引维护（支持流式增量即时可搜）
+// ==========================================
+function addPostToIndex(post) {
+  if (!post || !post.id) return;
+  if (docStore.has(post.id)) {
+    removePostFromIndex(post.id);
+  }
+  docStore.set(post.id, {
+    id: post.id,
+    t: post.t,
+    u: post.u,
+    m: post.m,
+    g: post.g || [],
+    k: post.k || [],
+    c: post.c,
+    dl: post.dl,
+    tf: post.tf
+  });
+  totalDocLength += post.dl;
+
+  const tfMap = post.tf || {};
+  for (const term in tfMap) {
+    let postings = invertedIndex.get(term);
+    if (!postings) {
+      postings = new Map();
+      invertedIndex.set(term, postings);
+    }
+    postings.set(post.id, tfMap[term]);
+  }
+  avgDocLength = docStore.size > 0 ? (totalDocLength / docStore.size) : 1;
+}
+
+function removePostFromIndex(docId) {
+  const doc = docStore.get(docId);
+  if (!doc) return;
+  totalDocLength -= doc.dl;
+  docStore.delete(docId);
+
+  const tfMap = doc.tf || {};
+  for (const term in tfMap) {
+    const postings = invertedIndex.get(term);
+    if (postings) {
+      postings.delete(docId);
+      if (postings.size === 0) {
+        invertedIndex.delete(term);
+      }
+    }
+  }
+  avgDocLength = docStore.size > 0 ? (totalDocLength / docStore.size) : 1;
+}
+
+function buildInvertedIndex(localMap) {
+  invertedIndex.clear();
+  docStore.clear();
+  totalDocLength = 0;
+
+  for (const post of localMap.values()) {
+    addPostToIndex(post);
+  }
+}
+
+// ==========================================
+// 4. 流式拉取 JSONL + 智能增量终止与即时索引
 // ==========================================
 async function syncJsonlStream(url, localMap) {
   const response = await fetch(url);
@@ -163,6 +227,25 @@ async function syncJsonlStream(url, localMap) {
   const toPut = [];
   const toDelete = [];
   let canceledEarly = false;
+
+  let lastProgressTime = 0;
+  function reportProgress(force = false) {
+    const now = performance.now();
+    if (!force && now - lastProgressTime < 60) return;
+    lastProgressTime = now;
+    const total = meta ? meta.total : (localMap.size || docStore.size || 0);
+    const loaded = docStore.size;
+    self.postMessage({
+      type: 'progress',
+      payload: {
+        loaded,
+        total,
+        percent: total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : 0,
+        updated: toPut.length,
+        scanned: postIndex
+      }
+    });
+  }
 
   outer: while (true) {
     const { done, value } = await reader.read();
@@ -193,6 +276,7 @@ async function syncJsonlStream(url, localMap) {
           if (!validIds.has(cachedId)) {
             toDelete.push(cachedId);
             localMap.delete(cachedId);
+            removePostFromIndex(cachedId);
           }
         }
 
@@ -202,6 +286,9 @@ async function syncJsonlStream(url, localMap) {
             lastMissingIndex = i;
           }
         }
+
+        // 收到元数据立即发出首发进度
+        reportProgress(true);
         continue;
       }
 
@@ -211,6 +298,10 @@ async function syncJsonlStream(url, localMap) {
 
       // 若命中缓存且修改时间戳完全一致
       if (cached && cached.m === data.m) {
+        // 如果此前未在索引中，加入索引
+        if (!docStore.has(cached.id)) {
+          addPostToIndex(cached);
+        }
         // 且当前位置已越过所有缺失旧文章，说明后面的全部本地已有且未改动，直接中断连接！
         if (currentIndex > lastMissingIndex) {
           canceledEarly = true;
@@ -221,26 +312,23 @@ async function syncJsonlStream(url, localMap) {
           }
           break outer;
         }
+        reportProgress(false);
         continue;
       }
 
-      // 新增或内容更新：分词并加入同步队列
+      // 新增或内容更新：分词并加入同步队列与当前倒排索引（已加载即可搜！）
       const processed = processPost(data);
       localMap.set(processed.id, processed);
       toPut.push(processed);
+      addPostToIndex(processed);
 
       // 实时通知前台同步进度
-      if (toPut.length % 5 === 0 || postIndex === meta?.total) {
-        self.postMessage({
-          type: 'progress',
-          payload: { updated: toPut.length, scanned: postIndex, total: meta ? meta.total : 0 }
-        });
-      }
+      reportProgress(false);
     }
   }
 
   // 流自然结束（未被 cancel）时，处理 buffer 残留行
-  if (!canceledEarly) {
+  if (!canceledEarly && buffer) {
     buffer += decoder.decode();
     const remaining = buffer.split('\n');
     for (const rawLine of remaining) {
@@ -254,6 +342,9 @@ async function syncJsonlStream(url, localMap) {
             const processed = processPost(data);
             localMap.set(processed.id, processed);
             toPut.push(processed);
+            addPostToIndex(processed);
+          } else if (!docStore.has(cached.id)) {
+            addPostToIndex(cached);
           }
         }
       } catch (err) {
@@ -262,48 +353,15 @@ async function syncJsonlStream(url, localMap) {
     }
   }
 
+  reportProgress(true);
+
   return {
     toPut,
     toDelete,
     canceledEarly,
     scannedCount: postIndex,
-    totalCount: meta ? meta.total : localMap.size
+    totalCount: meta ? meta.total : (localMap.size || docStore.size)
   };
-}
-
-// ==========================================
-// 4. 构建倒排索引 & BM25 检索
-// ==========================================
-function buildInvertedIndex(localMap) {
-  invertedIndex.clear();
-  docStore.clear();
-  let totalLength = 0;
-
-  for (const post of localMap.values()) {
-    docStore.set(post.id, {
-      id: post.id,
-      t: post.t,
-      u: post.u,
-      m: post.m,
-      g: post.g || [],
-      k: post.k || [],
-      c: post.c,
-      dl: post.dl
-    });
-    totalLength += post.dl;
-
-    const tfMap = post.tf || {};
-    for (const term in tfMap) {
-      let postings = invertedIndex.get(term);
-      if (!postings) {
-        postings = new Map();
-        invertedIndex.set(term, postings);
-      }
-      postings.set(post.id, tfMap[term]);
-    }
-  }
-
-  avgDocLength = docStore.size > 0 ? (totalLength / docStore.size) : 1;
 }
 
 function searchBM25(query, limit = 20) {
@@ -581,6 +639,8 @@ self.onmessage = async (e) => {
       req.onsuccess = () => {
         invertedIndex.clear();
         docStore.clear();
+        totalDocLength = 0;
+        avgDocLength = 0;
         self.postMessage({ type: 'cleared', payload: true });
       };
     } catch (err) {

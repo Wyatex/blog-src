@@ -204,6 +204,9 @@
 
     let worker = null;
     let currentRequestId = 0;
+    let isSyncComplete = false;
+    let loadedCount = 0;
+    let totalCount = 0;
 
     function initWorker() {
       if (worker) worker.terminate();
@@ -218,14 +221,21 @@
         const { type, payload } = e.data;
 
         if (type === 'cache_ready') {
+          loadedCount = payload.count;
+          if (!totalCount) totalCount = payload.count;
           syncStatus.innerHTML = `已从 IndexedDB 瞬间加载 <b>${payload.count}</b> 篇文章（词项 ${payload.totalTerms}），正在后台检查增量更新...`;
         }
 
         if (type === 'progress') {
-          syncStatus.textContent = `流式同步增量文章：已分词 ${payload.updated} 篇 (扫描 ${payload.scanned}/${payload.total})...`;
+          loadedCount = payload.loaded;
+          totalCount = payload.total;
+          syncStatus.innerHTML = `流式增量同步中：已载入 <b>${payload.loaded}</b> / ${payload.total} 篇 (${payload.percent}%)，已加载内容可实时输入检索...`;
         }
 
         if (type === 'sync_complete') {
+          isSyncComplete = true;
+          loadedCount = payload.totalDocs;
+          totalCount = payload.totalDocs;
           const cancelTag = payload.canceledEarly
             ? `<span class="badge success">命中增量缓存提前断开流 (仅读 ${payload.scannedLines} 行)</span>`
             : `<span class="badge">全量拉取完成</span>`;
@@ -244,7 +254,10 @@
         if (type === 'search_results') {
           // 仅渲染最新一次发出的请求结果，避免竞态覆盖
           if (payload.requestId === currentRequestId) {
-            searchStats.textContent = `找到 ${payload.results.length} 条结果 (${payload.elapsedMs} ms)`;
+            const statusBadge = isSyncComplete
+              ? `<span class="badge success">加载完成</span> `
+              : (totalCount > 0 ? `<span class="badge">已加载 ${loadedCount}/${totalCount}</span> ` : '');
+            searchStats.innerHTML = `${statusBadge}找到 ${payload.results.length} 条结果 (${payload.elapsedMs} ms)`;
             renderResults(payload.results);
           }
         }
